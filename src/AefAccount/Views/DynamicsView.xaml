@@ -1,0 +1,150 @@
+<UserControl x:Class="AefAccount.Views.DynamicsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:AefAccount.Controls">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,4,0">
+
+            <Border Background="{DynamicResource Brush.Bg.Panel}"
+                    BorderBrush="{DynamicResource Brush.Line.Soft}" BorderThickness="1"
+                    Padding="12,6" Margin="0,0,0,16">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="МЕТРИКА" Style="{StaticResource Text.Kicker}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox Width="190" ItemsSource="{Binding Metrics}" SelectedItem="{Binding SelectedMetric}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding Label}" FontSize="12"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="СРАВНЕНИЕ" Style="{StaticResource Text.Kicker}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <ComboBox Width="168" ItemsSource="{Binding Snapshots}" SelectedItem="{Binding CompareA}" Margin="0,0,6,0">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding DisplayLabelShort}" FontSize="11"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <TextBlock Text="→" Foreground="{DynamicResource Brush.Text.Muted}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <ComboBox Width="168" ItemsSource="{Binding Snapshots}" SelectedItem="{Binding CompareB}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate><TextBlock Text="{Binding DisplayLabelShort}" FontSize="11"/></DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border Style="{StaticResource PanelBorder}" Padding="18">
+                <StackPanel>
+                    <Grid Margin="0,0,0,8">
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="// ГРАФИК" Style="{StaticResource Text.Kicker}" VerticalAlignment="Center"/>
+                            <TextBlock Text="{Binding Chart.Label}" Style="{StaticResource Text.Body}"
+                                       Foreground="{DynamicResource Brush.Text.Secondary}" Margin="10,0,0,0"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <TextBlock Text="{Binding Chart.ValueText}" Style="{StaticResource Text.Value}" FontSize="22"/>
+                            <TextBlock Text="{Binding Chart.DeltaText}" Style="{StaticResource Text.MonoSmall}"
+                                       VerticalAlignment="Bottom" Margin="8,0,0,3"/>
+                        </StackPanel>
+                    </Grid>
+                    <controls:LineChart Chart="{Binding Chart}" Height="300"/>
+                </StackPanel>
+            </Border>
+
+            <Grid Margin="0,16,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100*"/>
+                    <ColumnDefinition Width="145*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource PanelBorder}" Padding="18" Margin="0,0,12,0">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="// ТАЙМЛАЙН" Style="{StaticResource Text.Kicker}"/>
+                            <TextBlock Text="{Binding Snapshots.Count, StringFormat=СНИМКОВ: {0}}" Style="{StaticResource Text.Kicker}"
+                                       HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text.Faint}"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Snapshots}" Margin="0,12,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Height="44">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="14"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Rectangle Width="6" Height="6" Fill="{DynamicResource Brush.Accent}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   RenderTransformOrigin="0.5,0.5">
+                                            <Rectangle.RenderTransform>
+                                                <RotateTransform Angle="45"/>
+                                            </Rectangle.RenderTransform>
+                                        </Rectangle>
+                                        <StackPanel Grid.Column="1" Margin="8,0,8,0" VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding DisplayLabel}" Style="{StaticResource Text.Body}"
+                                                       FontSize="12" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding DiffSummary}" Style="{StaticResource Text.MonoSmall}"
+                                                       FontSize="9" TextTrimming="CharacterEllipsis"/>
+                                        </StackPanel>
+                                        <Button Grid.Column="2" Style="{StaticResource QuietButton}" Height="26" Padding="8,0"
+                                                Command="{Binding DataContext.SelectSnapshotCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                CommandParameter="{Binding}">
+                                            <TextBlock Text="ОТКРЫТЬ" FontSize="9" FontWeight="SemiBold"/>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Padding="18">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="// ЧТО ИЗМЕНИЛОСЬ" Style="{StaticResource Text.Kicker}"/>
+                            <TextBlock Text="{Binding CompareHint}" Style="{StaticResource Text.MonoSmall}" HorizontalAlignment="Right"/>
+                        </Grid>
+                        <TextBlock Text="Сравниваю…" Style="{StaticResource Text.Meta}" Margin="0,12,0,0"
+                                   Visibility="{Binding IsCompareLoading, Converter={StaticResource BoolToVisibility}}"/>
+                        <ItemsControl ItemsSource="{Binding CompareDiff.Groups}" Margin="0,12,0,0"
+                                      Visibility="{Binding HasCompareDiff, Converter={StaticResource BoolToVisibility}}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <TextBlock Text="{Binding Title}" Style="{StaticResource Text.Kicker}"
+                                                   Foreground="{DynamicResource Brush.Text.Secondary}"/>
+                                        <Border Background="{DynamicResource Brush.Line.Strong}" Height="2" Margin="0,4,0,6"/>
+                                        <ItemsControl ItemsSource="{Binding Lines}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Grid Margin="0,0,0,3">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="3"/>
+                                                            <ColumnDefinition Width="*"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Rectangle Fill="{Binding Kind, Converter={StaticResource DiffKindBrush}}"/>
+                                                        <TextBlock Grid.Column="1" Text="{Binding Text}" Style="{StaticResource Text.Body}"
+                                                                   FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0"/>
+                                                    </Grid>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="Выбери два разных снимка." Style="{StaticResource Text.Meta}" Margin="0,12,0,0"
+                                   Visibility="{Binding HasCompareDiff, Converter={StaticResource InverseBoolToVisibility}}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
+

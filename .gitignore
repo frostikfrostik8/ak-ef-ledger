@@ -1,0 +1,19 @@
+# Build
+bin/
+obj/
+publish/
+*.user
+*.suo
+
+# Local account data
+.secrets/
+data/aef.db
+data/aef.db-shm
+data/aef.db-wal
+data/snapshots/
+
+# OS/editor
+.vs/
+.vscode/
+Thumbs.db
+.DS_Store

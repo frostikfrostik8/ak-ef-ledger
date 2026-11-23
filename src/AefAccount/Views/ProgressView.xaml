@@ -1,0 +1,205 @@
+<UserControl x:Class="AefAccount.Views.ProgressView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,4,0">
+
+            <TextBlock Text="// ДОМЕНЫ" Style="{StaticResource Text.Kicker}" Margin="0,0,0,8"/>
+            <ItemsControl ItemsSource="{Binding Data.Domains}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource PanelBorder}" Padding="18" Margin="0,0,0,12">
+                            <StackPanel>
+                                <Grid>
+                                    <StackPanel>
+                                        <TextBlock Text="{Binding DisplayName}" Style="{StaticResource Text.H2}"/>
+                                        <TextBlock Text="{Binding Id, StringFormat=ID: {0}}" Style="{StaticResource Text.MonoSmall}"
+                                                   Margin="0,3,0,0"/>
+                                    </StackPanel>
+                                    <StackPanel HorizontalAlignment="Right">
+                                        <TextBlock Text="{Binding Level}" Style="{StaticResource Text.Value}"
+                                                   FontSize="26" HorizontalAlignment="Right"/>
+                                        <TextBlock Text="DOMAIN LEVEL" Style="{StaticResource Text.Kicker}"
+                                                   FontSize="9" HorizontalAlignment="Right"/>
+                                    </StackPanel>
+                                </Grid>
+                                <Grid Margin="0,12,0,0">
+                                    <TextBlock Style="{StaticResource Text.MonoSmall}">
+                                        <Run Text="КАЗНА "/><Run Text="{Binding MoneyText, Mode=OneWay}"/>
+                                    </TextBlock>
+                                    <TextBlock Text="{Binding OverallPercent, StringFormat=СОБРАНО {0:0}%}"
+                                               Style="{StaticResource Text.MonoSmall}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding OverallPercent, Mode=OneWay}" Foreground="{Binding OverallPercent, Converter={StaticResource ProgressBrush}}" Margin="0,6,0,0"/>
+                                <ItemsControl ItemsSource="{Binding Settlements}" Margin="0,14,0,0">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Style="{StaticResource ChipBorder}" Margin="0,0,6,6">
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding DisplayName}" FontSize="11" Foreground="{DynamicResource Brush.Text.Muted}"/>
+                                                    <TextBlock Text="{Binding LevelText}" Style="{StaticResource Text.MonoSmall}"
+                                                               Margin="6,0,0,0"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding Collections}" Margin="0,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border BorderBrush="{DynamicResource Brush.Line.Soft}" BorderThickness="0,1,0,0"
+                                                    Padding="0,10,0,4">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="190"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding DisplayName}" Style="{StaticResource Text.Body}"
+                                                               FontSize="12" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                    <ItemsControl Grid.Column="1" ItemsSource="{Binding KeyMetrics}">
+                                                        <ItemsControl.ItemsPanel>
+                                                            <ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate>
+                                                        </ItemsControl.ItemsPanel>
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <StackPanel Margin="8,0,8,0">
+                                                                    <Grid>
+                                                                        <TextBlock Text="{Binding Label}" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                                                                        <TextBlock Text="{Binding Display}" HorizontalAlignment="Right"
+                                                                                   Style="{StaticResource Text.MonoSmall}"/>
+                                                                    </Grid>
+                                                                    <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Percent, Mode=OneWay}" Foreground="{Binding Percent, Converter={StaticResource ProgressBrush}}"
+                                                                                 Height="3" Margin="0,5,0,0"/>
+                                                                </StackPanel>
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </Grid>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Style="{StaticResource PanelBorder}" Padding="18" Margin="0,12,0,12">
+                <StackPanel>
+                    <TextBlock Text="// ИНВЕНТАРЬ" Style="{StaticResource Text.Kicker}" Margin="0,0,0,12"/>
+                    <UniformGrid Columns="4">
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Text="ОРУЖИЕ" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                            <TextBlock Text="{Binding Data.Extras.Inventory.Weapons}" Style="{StaticResource Text.Value}"
+                                       FontSize="24" Margin="0,2,0,0"/>
+                            <TextBlock Text="позиций" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Text="ГИР" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                            <TextBlock Text="{Binding Data.Extras.Inventory.Equips}" Style="{StaticResource Text.Value}"
+                                       FontSize="24" Margin="0,2,0,0"/>
+                            <TextBlock Text="{Binding Data.Extras.Inventory.EquipCopies, StringFormat=копий: {0}}" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel Margin="0,0,12,0">
+                            <TextBlock Text="ТАКТИЧЕСКИЕ" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                            <TextBlock Text="{Binding Data.Extras.Inventory.TacticalItems}" Style="{StaticResource Text.Value}"
+                                       FontSize="24" Margin="0,2,0,0"/>
+                            <TextBlock Text="предметов" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock Text="ДОМЕНЫ" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                            <TextBlock Text="{Binding Data.Domains.Count}" Style="{StaticResource Text.Value}"
+                                       FontSize="24" Margin="0,2,0,0"/>
+                            <TextBlock Text="зон" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        </StackPanel>
+                    </UniformGrid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="// СОБЫТИЯ" Style="{StaticResource Text.Kicker}" Margin="0,12,0,8"/>
+            <ItemsControl ItemsSource="{Binding Data.CrisisEvents}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CardBorder}" Padding="16" Width="330" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.H3}" TextWrapping="Wrap"/>
+                                <TextBlock Text="{Binding EndText, StringFormat=до {0}}" Style="{StaticResource Text.MonoSmall}"
+                                           Margin="0,3,0,0"/>
+                                <UniformGrid Columns="3" Margin="0,12,0,0">
+                                    <StackPanel>
+                                        <TextBlock Text="HIGHEST" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                                        <TextBlock Text="{Binding Highest}" Style="{StaticResource Text.Value}" FontSize="20"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="НЕДЕЛЬНЫЕ" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                                        <TextBlock Text="{Binding WeeklyCount}" Style="{StaticResource Text.Value}" FontSize="20"/>
+                                    </StackPanel>
+                                    <StackPanel>
+                                        <TextBlock Text="ЭТАПЫ" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                                        <TextBlock Text="{Binding StageCount}" Style="{StaticResource Text.Value}" FontSize="20"/>
+                                    </StackPanel>
+                                </UniformGrid>
+                                <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding WeeklyPercent, Mode=OneWay}" Foreground="{Binding WeeklyPercent, Converter={StaticResource ProgressBrush}}" Margin="0,12,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ItemsControl ItemsSource="{Binding Data.WarSeasons}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CardBorder}" Padding="16" Width="330" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.H3}"/>
+                                <TextBlock Text="{Binding CycleText}" Style="{StaticResource Text.MonoSmall}" Margin="0,3,0,0"/>
+                                <Grid Margin="0,12,0,0">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding Stars}" Style="{StaticResource Text.Value}" FontSize="24"/>
+                                        <TextBlock Text=" / 9 ЗВЁЗД" Style="{StaticResource Text.Meta}" FontSize="11"
+                                                   VerticalAlignment="Bottom" Margin="5,0,0,3"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding EndText}" Style="{StaticResource Text.MonoSmall}"
+                                               HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                                </Grid>
+                                <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding StarsPercent, Mode=OneWay}" Foreground="{Binding StarsPercent, Converter={StaticResource ProgressBrush}}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <ItemsControl ItemsSource="{Binding Data.IndieGroups}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource CardBorder}" Padding="14" Width="260" Margin="0,0,10,10">
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" Style="{StaticResource Text.H3}" FontSize="12" TextWrapping="Wrap"/>
+                                <Grid Margin="0,8,0,0">
+                                    <TextBlock Text="{Binding NormalPassed, StringFormat=обычные: {0}}" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                                    <TextBlock Text="{Binding HardPassed, StringFormat=сложные: {0}}" Style="{StaticResource Text.Meta}"
+                                               FontSize="11" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Percent, Mode=OneWay}" Foreground="{Binding Percent, Converter={StaticResource ProgressBrush}}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
+

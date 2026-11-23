@@ -1,0 +1,353 @@
+<UserControl x:Class="AefAccount.Views.OverviewView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="clr-namespace:AefAccount.Controls">
+    <UserControl.Resources>
+        <Style x:Key="StatLabel" TargetType="TextBlock" BasedOn="{StaticResource Text.Kicker}">
+            <Setter Property="FontSize" Value="9"/>
+        </Style>
+        <Style x:Key="SmallValue" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="{StaticResource Font.Display}"/>
+            <Setter Property="FontSize" Value="20"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="Typography.NumeralAlignment" Value="Tabular"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,4,0">
+
+            <!-- Hero -->
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="62*"/>
+                    <ColumnDefinition Width="38*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource PanelBorder}" Padding="24" Margin="0,0,12,0">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="// ENDMINISTRATOR" Style="{StaticResource Text.Kicker}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.PlayerName}" Style="{StaticResource Text.H1}"
+                                           FontSize="30" Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
+                                <TextBlock Style="{StaticResource Text.Mono}" Margin="0,6,0,0">
+                                    <Run Text="UID "/><Run Text="{Binding Data.Snapshot.RoleId, Mode=OneWay}" FontWeight="SemiBold"/>
+                                    <Run Text="  ·  "/><Run Text="{Binding Data.Snapshot.ServerName, Mode=OneWay}"/>
+                                </TextBlock>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" HorizontalAlignment="Right">
+                                <Border Style="{StaticResource ChipBorder}">
+                                    <TextBlock Style="{StaticResource Text.MonoSmall}" FontSize="10">
+                                        <Run Text="PATCH "/><Run Text="{Binding Data.Snapshot.GameVersion, Mode=OneWay}"
+                                                                 Foreground="{DynamicResource Brush.Text}" FontWeight="SemiBold"/>
+                                    </TextBlock>
+                                </Border>
+                                <TextBlock Text="{Binding Data.Snapshot.DisplayDate}" Style="{StaticResource Text.MonoSmall}"
+                                           HorizontalAlignment="Right" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <UniformGrid Grid.Row="1" Columns="4" Margin="0,24,0,0">
+                            <StackPanel>
+                                <TextBlock Text="УРОВЕНЬ" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.PlayerLevel}" Style="{StaticResource Text.Value}"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="WORLD LEVEL" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.WorldLevel}" Style="{StaticResource Text.Value}"
+                                           Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="ОПЫТ" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.Exp}" Style="{StaticResource SmallValue}"
+                                           Margin="0,7,0,0"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="СОЗДАН" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.CreatedText}" Style="{StaticResource Text.Meta}"
+                                           FontSize="12" Margin="0,9,0,0"/>
+                            </StackPanel>
+                        </UniformGrid>
+
+                        <Border Grid.Row="2" BorderBrush="{DynamicResource Brush.Line.Soft}"
+                                BorderThickness="0,1,0,0" Padding="0,12,0,0" Margin="0,20,0,0">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="MISSION" Style="{StaticResource StatLabel}"
+                                               Foreground="{DynamicResource Brush.Text.Secondary}" Margin="0,0,10,0"/>
+                                    <TextBlock Text="{Binding Data.Snapshot.MainMission}" Style="{StaticResource Text.Body}"
+                                               Foreground="{DynamicResource Brush.Text.Secondary}" TextTrimming="CharacterEllipsis"/>
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource Text.MonoSmall}" HorizontalAlignment="Right">
+                                    <Run Text="ВХОД: "/><Run Text="{Binding Data.Snapshot.LastLoginText, Mode=OneWay}"/>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Padding="20">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="// СНИМОК" Style="{StaticResource Text.Kicker}"/>
+                            <TextBlock Style="{StaticResource Text.MonoSmall}" HorizontalAlignment="Right">
+                                <Run Text="#"/><Run Text="{Binding Data.Snapshot.Id, Mode=OneWay}"/>
+                            </TextBlock>
+                        </Grid>
+                        <TextBlock Text="{Binding FreshnessText}" Margin="0,14,0,2">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock" BasedOn="{StaticResource Text.H2}">
+                                    <Setter Property="Foreground" Value="{DynamicResource Brush.Text.Muted}"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding FreshnessState}" Value="Good">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Good}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FreshnessState}" Value="Warn">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Warn}"/>
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding FreshnessState}" Value="Bad">
+                                            <Setter Property="Foreground" Value="{DynamicResource Brush.Bad}"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource Text.Meta}" FontSize="11">
+                            <Run Text="в архиве: "/><Run Text="{Binding Meta.SnapshotsCount, Mode=OneWay}"/>
+                            <Run Text=" снимков"/>
+                        </TextBlock>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,16,0,12"/>
+
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Снято" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="{Binding Data.Snapshot.DisplayDate}" HorizontalAlignment="Right"
+                                       Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Версия" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="{Binding Data.Snapshot.GameVersion}" HorizontalAlignment="Right"
+                                       Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,8">
+                            <TextBlock Text="Профиль Skport" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="{Binding Data.Extras.Profile.Nickname}" HorizontalAlignment="Right"
+                                       Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+                        <Grid>
+                            <TextBlock Text="Источник" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="skport" HorizontalAlignment="Right" Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14,0,12"/>
+
+                        <TextBlock Text="// СЛЕДУЮЩИЙ ШАГ" Style="{StaticResource StatLabel}"/>
+                        <TextBlock Text="Снять новый снимок, чтобы обновить дельты и графики."
+                                   Style="{StaticResource Text.Meta}" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Resources -->
+            <TextBlock Text="// РЕСУРСЫ" Style="{StaticResource Text.Kicker}" Margin="0,24,0,8"/>
+            <WrapPanel>
+                <Border Style="{StaticResource CardBorder}" Padding="14" Width="180" Margin="0,0,8,10">
+                    <StackPanel>
+                        <TextBlock Text="РАССУДОК" Style="{StaticResource StatLabel}"/>
+                        <TextBlock Text="{Binding Data.Snapshot.StaminaText}" Style="{StaticResource Text.Value}"
+                                   FontSize="24" Margin="0,2,0,0"/>
+                        <TextBlock Text="текущий запас" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Data.Snapshot.StaminaPercent, Mode=OneWay}" Foreground="{Binding Data.Snapshot.StaminaPercent, Converter={StaticResource ProgressBrush}}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="14" Width="180" Margin="0,0,8,10">
+                    <StackPanel>
+                        <TextBlock Text="BATTLE PASS" Style="{StaticResource StatLabel}"/>
+                        <TextBlock Text="{Binding Data.Snapshot.BpText}" Style="{StaticResource Text.Value}"
+                                   FontSize="24" Margin="0,2,0,0"/>
+                        <TextBlock Text="сезонный прогресс" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Data.Snapshot.BpPercent, Mode=OneWay}" Foreground="{Binding Data.Snapshot.BpPercent, Converter={StaticResource ProgressBrush}}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="14" Width="180" Margin="0,0,8,10">
+                    <StackPanel>
+                        <TextBlock Text="ЕЖЕДНЕВКИ" Style="{StaticResource StatLabel}"/>
+                        <TextBlock Text="{Binding Data.Snapshot.DailyText}" Style="{StaticResource Text.Value}"
+                                   FontSize="24" Margin="0,2,0,0"/>
+                        <TextBlock Text="активность на сегодня" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Data.Snapshot.DailyPercent, Mode=OneWay}" Foreground="{Binding Data.Snapshot.DailyPercent, Converter={StaticResource ProgressBrush}}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="14" Width="180" Margin="0,0,8,10">
+                    <StackPanel>
+                        <TextBlock Text="НЕДЕЛЬНЫЕ" Style="{StaticResource StatLabel}"/>
+                        <TextBlock Text="{Binding Data.Snapshot.WeeklyText}" Style="{StaticResource Text.Value}"
+                                   FontSize="24" Margin="0,2,0,0"/>
+                        <TextBlock Text="до недельного сброса" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Data.Snapshot.WeeklyPercent, Mode=OneWay}" Foreground="{Binding Data.Snapshot.WeeklyPercent, Converter={StaticResource ProgressBrush}}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="14" Width="180" Margin="0,0,8,10">
+                    <StackPanel>
+                        <TextBlock Text="КРЕДИТЫ" Style="{StaticResource StatLabel}"/>
+                        <TextBlock Text="{Binding Data.Snapshot.CreditText}" Style="{StaticResource Text.Value}"
+                                   FontSize="24" Margin="0,2,0,0"/>
+                        <TextBlock Text="Skport" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Data.Snapshot.CreditPercent, Mode=OneWay}" Foreground="{Binding Data.Snapshot.CreditPercent, Converter={StaticResource ProgressBrush}}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource CardBorder}" Padding="14" Width="180" Margin="0,0,8,10">
+                    <StackPanel>
+                        <TextBlock Text="SEEK SUSPICION" Style="{StaticResource StatLabel}"/>
+                        <TextBlock Text="{Binding Data.Snapshot.SeekText}" Style="{StaticResource Text.Value}"
+                                   FontSize="18" Margin="0,7,0,0"/>
+                        <TextBlock Text="текущий запас" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding Data.Snapshot.SeekPercent, Mode=OneWay}" Foreground="{Binding Data.Snapshot.SeekPercent, Converter={StaticResource ProgressBrush}}" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+            </WrapPanel>
+
+            <!-- Diff + collection -->
+            <Grid Margin="0,24,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="145*"/>
+                    <ColumnDefinition Width="100*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" Style="{StaticResource PanelBorder}" Padding="18" Margin="0,0,12,0">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="// С ПРОШЛОГО СНИМКА" Style="{StaticResource Text.Kicker}"/>
+                            <TextBlock Text="{Binding Data.DiffSummary}" Style="{StaticResource Text.MonoSmall}"
+                                       HorizontalAlignment="Right"/>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{Binding OverviewDiffLines}" Margin="0,14,0,0"
+                                      Visibility="{Binding HasDiffChanges, Converter={StaticResource BoolToVisibility}}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,4">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="3"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Rectangle Fill="{Binding Kind, Converter={StaticResource DiffKindBrush}}"
+                                                   VerticalAlignment="Stretch"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Text}" Style="{StaticResource Text.Body}"
+                                                   FontSize="12" TextWrapping="Wrap" Margin="10,0,0,0"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Text="{Binding DiffEmptyText}" Style="{StaticResource Text.Meta}"
+                                   Margin="0,14,0,0"
+                                   Visibility="{Binding HasDiffChanges, Converter={StaticResource InverseBoolToVisibility}}"/>
+
+                        <StackPanel Margin="0,14,0,0"
+                                    Visibility="{Binding HasDiffChanges, Converter={StaticResource InverseBoolToVisibility}}">
+                            <TextBlock Text="// СЛЕДУЮЩИЙ СНИМОК ПОКАЖЕТ" Style="{StaticResource Text.Kicker}" Margin="0,0,0,8"/>
+                            <TextBlock Text="01   Новые операторы, поты и уровни" Style="{StaticResource Text.Meta}" FontSize="11" Margin="0,0,0,3"/>
+                            <TextBlock Text="02   Оружие, гир и энчанты" Style="{StaticResource Text.Meta}" FontSize="11" Margin="0,0,0,3"/>
+                            <TextBlock Text="03   Ресурсы, достижения и коллекции" Style="{StaticResource Text.Meta}" FontSize="11"/>
+                        </StackPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14,0,12"/>
+                        <Grid>
+                            <TextBlock Text="Сравнение и графики — во вкладке «Динамика»"
+                                       Style="{StaticResource Text.Meta}" FontSize="11" VerticalAlignment="Center"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <TextBlock Text="{Binding Meta.SnapshotsCount}" Style="{StaticResource Text.Mono}"
+                                           Foreground="{DynamicResource Brush.Text}" FontWeight="SemiBold"/>
+                                <TextBlock Text=" СНИМКОВ" Style="{StaticResource Text.Kicker}" Margin="4,0,0,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Grid.Column="1" Style="{StaticResource PanelBorder}" Padding="18">
+                    <StackPanel>
+                        <Grid>
+                            <TextBlock Text="// КОЛЛЕКЦИЯ" Style="{StaticResource Text.Kicker}"/>
+                            <TextBlock Text="{Binding Data.Snapshot.Id, StringFormat=# {0}}" Style="{StaticResource Text.MonoSmall}"
+                                       HorizontalAlignment="Right"/>
+                        </Grid>
+                        <UniformGrid Columns="2" Margin="0,14,0,12">
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="ОПЕРАТОРЫ" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.CharNum}" Style="{StaticResource SmallValue}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="ОРУЖИЕ" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.WeaponNum}" Style="{StaticResource SmallValue}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="ДОКУМЕНТЫ" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.DocNum}" Style="{StaticResource SmallValue}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                            <StackPanel>
+                                <TextBlock Text="ДОСТИЖЕНИЯ" Style="{StaticResource StatLabel}"/>
+                                <TextBlock Text="{Binding Data.Snapshot.AchieveCount}" Style="{StaticResource SmallValue}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </UniformGrid>
+                        <Border Style="{StaticResource Divider}" Margin="0,0,0,10"/>
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Гир в инвентаре" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="{Binding InventoryText}" HorizontalAlignment="Right" Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Тактические предметы" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="{Binding Data.Extras.Inventory.TacticalItems}" HorizontalAlignment="Right" Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+                        <Grid Margin="0,0,0,6">
+                            <TextBlock Text="Локации" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="{Binding LocationsCount}" HorizontalAlignment="Right" Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+                        <Grid>
+                            <TextBlock Text="Плашки" Style="{StaticResource Text.Meta}"/>
+                            <TextBlock Text="{Binding PlatedCount}" HorizontalAlignment="Right" Style="{StaticResource Text.MonoSmall}"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- Top operators -->
+            <Border Style="{StaticResource PanelBorder}" Padding="18" Margin="0,24,0,0">
+                <StackPanel>
+                    <Grid>
+                        <TextBlock Text="// КОСТЯК" Style="{StaticResource Text.Kicker}"/>
+                        <TextBlock Text="ТОП ПО РЕДКОСТИ И ПОТАМ" Style="{StaticResource Text.Kicker}"
+                                   HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text.Faint}"/>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding TopOperators}" Margin="0,14,0,0">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <controls:OperatorCard Margin="0,0,12,12"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
+
+
+
+
