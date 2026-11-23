@@ -4,7 +4,7 @@
 
 Локальный десктопный дашборд для данных аккаунта **Arknights: Endfield**:
 ростер, ресурсы, домены, достижения, история снимков и динамика.
-Сделан на .NET 8 / WPF. Без веб-сервера, браузера и телеметрии.
+Сделан на .NET 10 LTS / WPF. Без веб-сервера, браузера и телеметрии.
 
 > **Неофициальный фанатский проект.** Не связан с HYPERGRYPH, GRYPHLINE или
 > Arknights: Endfield. Названия и торговые марки принадлежат правообладателям.
@@ -59,7 +59,7 @@ AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
 
 ## Быстрый старт (пакет релиза)
 
-1. Установите **.NET 8 Desktop Runtime** и **Python 3.10+**.
+1. Установите **.NET 10 Desktop Runtime** и **Python 3.10+**.
 2. Распакуйте zip.
 3. Создайте локальную базу:
 
@@ -104,7 +104,7 @@ build.cmd
 run.cmd
 ```
 
-Нужен .NET 8 SDK. Python для запуска UI не обязателен.
+Нужен .NET 10 SDK. Python для запуска UI не обязателен.
 
 ## Структура репозитория
 
@@ -172,3 +172,4 @@ src/AefAccount/Assets/Operators/<slug>/full.png
 Код: MIT — см. [LICENSE](LICENSE).
 Шрифты: SIL Open Font License — см. [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 Названия и торговые марки Arknights: Endfield принадлежат HYPERGRYPH / GRYPHLINE.
+

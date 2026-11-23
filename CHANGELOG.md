@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.3.0 — .NET 10 migration (2026-11-24)
+
+### Changed
+
+- Migrated from .NET 8 to **.NET 10 LTS** (`net10.0-windows`).
+- `Microsoft.Data.Sqlite` updated to 10.0.15.
+- CI and docs now require .NET 10 SDK / Desktop Runtime.
+- Version bumped to 0.3.0; release asset is built with .NET 10.
+
+### Why
+
+.NET 8 reached end of support on 2026-11-10. .NET 10 LTS is supported until
+2028-11-14 and keeps the WPF app on a patched runtime.
+
 ## v0.2.0 — private preview (2026-11-24)
 
 First prepared release of **AK:EF Ledger**.
