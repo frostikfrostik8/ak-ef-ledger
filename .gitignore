@@ -12,6 +12,11 @@ data/aef.db-shm
 data/aef.db-wal
 data/snapshots/
 
+# Real operator art is local-only (copyright/size).
+# The AI-generated test operator Vesper is committed as an exception.
+src/AefAccount/Assets/Operators/*
+!src/AefAccount/Assets/Operators/vesper/
+
 # OS/editor
 .vs/
 .vscode/
