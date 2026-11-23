@@ -21,7 +21,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          dotnet-version: 10.0.x
 
       - name: Publish app
         run: >
@@ -37,3 +37,4 @@ jobs:
           name: AK-EF-Ledger-win-x64
           path: out/AkEfLedger.exe
           if-no-files-found: error
+

@@ -17,7 +17,7 @@ owner approves the visibility switch.
 
 - [ ] `build.cmd` passes on a clean Windows machine with .NET 8 SDK.
 - [ ] GitHub Actions `build` workflow is green.
-- [ ] `AK-EF-Ledger-v0.2.0-win-x64.zip` extracts, `init_db.cmd` creates the DB,
+- [ ] `AK-EF-Ledger-v0.3.0-win-x64.zip` extracts, `init_db.cmd` creates the DB,
       `launch.cmd` opens the app, DEV profile works without a token.
 - [ ] Version in `SettingsView.xaml`, csproj and release tag match.
 - [ ] `CHANGELOG.md` and release notes are up to date.
@@ -34,7 +34,7 @@ owner approves the visibility switch.
 
 - [ ] Owner explicitly approves making the repository public.
 - [ ] `gh repo edit frostikfrostik8/ak-ef-ledger --visibility public --accept-visibility-change-consequences`
-- [ ] Release v0.2.0 is changed from prerelease to latest, if appropriate.
+- [ ] Release v0.3.0 is changed from prerelease to latest, if appropriate.
 - [ ] Watch issues/security advisories after publication.
 
 ## After publication
@@ -44,3 +44,4 @@ owner approves the visibility switch.
 - [ ] Decide whether to publish a public release with real operator art
       (not recommended: copyright) or keep the art local-only.
 - [ ] Consider GitHub Pages for the user guide.
+

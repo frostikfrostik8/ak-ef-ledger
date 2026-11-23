@@ -4,7 +4,7 @@
 
 A local Windows desktop dashboard for **Arknights: Endfield** account data:
 roster, resources, domains, achievements, snapshot history and dynamics.
-Built with .NET 8 / WPF. No web server, no browser, no telemetry.
+Built with .NET 10 LTS / WPF. No web server, no browser, no telemetry.
 
 > **Unofficial fan project.** Not affiliated with HYPERGRYPH, GRYPHLINE or
 > Arknights: Endfield. Game names and trademarks belong to their owners.
@@ -58,7 +58,7 @@ updater. Everything else is a local SQLite read.
 
 ## Quick start (release package)
 
-1. Install **.NET 8 Desktop Runtime** and **Python 3.10+**.
+1. Install **.NET 10 Desktop Runtime** and **Python 3.10+**.
 2. Extract the release zip.
 3. Create the local database:
 
@@ -103,7 +103,7 @@ Run:
 run.cmd
 ```
 
-Requires .NET 8 SDK. Python is optional for development; the UI runs without it.
+Requires .NET 10 SDK. Python is optional for development; the UI runs without it.
 
 ## Repository layout
 
@@ -174,3 +174,4 @@ and is intended for UI testing only.
 Code: MIT — see [LICENSE](LICENSE).
 Fonts: SIL Open Font License — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 Arknights: Endfield names and trademarks belong to HYPERGRYPH / GRYPHLINE.
+
