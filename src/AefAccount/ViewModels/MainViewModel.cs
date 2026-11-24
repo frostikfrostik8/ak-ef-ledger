@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
 using AefAccount.Localization;
@@ -53,6 +54,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private LanguageOption? _selectedLanguage;
     private string _settingsStatus = "";
     private int _testOperatorSeq;
+    private ArtPackStatus _artStatus = ArtPackStatus.None;
+    private bool _artBusy;
+    private double _artProgress;
 
     public MainViewModel()
     {
@@ -95,6 +99,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         LoadDevProfileCommand = new RelayCommand(() => LoadDevProfile());
         ResetTestDataCommand = new RelayCommand(ResetTestData);
         ReloadLanguagesCommand = new RelayCommand(ReloadLanguages);
+        OpenSettingsCommand = new RelayCommand(() => RequestNavigate("settings"));
+        _artStatus = ArtPack.Status;
 
         Metrics =
         [
@@ -153,6 +159,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand LoadDevProfileCommand { get; }
     public ICommand ResetTestDataCommand { get; }
     public ICommand ReloadLanguagesCommand { get; }
+    public ICommand OpenSettingsCommand { get; }
 
     public SnapshotMeta? Meta
     {
@@ -289,6 +296,74 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         get => _settingsStatus;
         private set => Set(ref _settingsStatus, value);
+    }
+
+    /// <summary>Строка состояния арт-пака: «37 оперативников · 18,3 МБ · v1».</summary>
+    public string ArtStatusText
+    {
+        get
+        {
+            var status = _artStatus;
+            if (!status.IsInstalled) return L.T("settings_art_status_missing");
+            var version = string.IsNullOrWhiteSpace(status.Version) ? "" : $" · v{status.Version}";
+            return L.T("settings_art_status_installed",
+                status.OperatorCount,
+                status.Megabytes.ToString("0.#"),
+                version);
+        }
+    }
+
+    public string ArtPathText => _artStatus.Root ?? L.T("settings_art_path_missing");
+
+    public bool HasArtPack => _artStatus.IsInstalled;
+
+    /// <summary>Убирать имеет смысл только свою папку или скачанный пак, не assets рядом с exe.</summary>
+    public bool CanRemoveArtPack => _artStatus.Root != null &&
+        !string.Equals(
+            Path.GetFullPath(_artStatus.Root),
+            Path.GetFullPath(ArtPack.ExeRoot),
+            StringComparison.OrdinalIgnoreCase);
+
+    public bool CanRemoveArtNow => CanUseArt && CanRemoveArtPack;
+
+    public bool ShowArtBanner => !HasArtPack && (Data?.Operators.Count ?? 0) > 0;
+
+    public bool IsArtBusy
+    {
+        get => _artBusy;
+        set
+        {
+            if (!Set(ref _artBusy, value)) return;
+            OnPropertyChanged(nameof(CanUseArt));
+            OnPropertyChanged(nameof(CanRemoveArtNow));
+        }
+    }
+
+    public bool CanUseArt => !_artBusy;
+
+    public double ArtProgress
+    {
+        get => _artProgress;
+        set => Set(ref _artProgress, value);
+    }
+
+    /// <summary>Перечитать папку арта после установки, смены пути или удаления.</summary>
+    public void RefreshArtStatus()
+    {
+        _artStatus = ArtPack.Refresh();
+        OperatorArt.Initialize();
+        OnPropertyChanged(nameof(ArtStatusText));
+        OnPropertyChanged(nameof(ArtPathText));
+        OnPropertyChanged(nameof(HasArtPack));
+        OnPropertyChanged(nameof(CanRemoveArtPack));
+        OnPropertyChanged(nameof(CanRemoveArtNow));
+        OnPropertyChanged(nameof(ShowArtBanner));
+    }
+
+    public void SetSettingsStatus(string message, bool error = false)
+    {
+        SettingsStatus = message;
+        StatusIsError = error;
     }
 
     public string PageTitle
@@ -619,6 +694,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(PlatedCount));
         OnPropertyChanged(nameof(InventoryText));
         OnPropertyChanged(nameof(DomainsCount));
+        OnPropertyChanged(nameof(ShowArtBanner));
         UpdateFreshness();
     }
 
@@ -1082,4 +1158,3 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private void OnPropertyChanged([CallerMemberName] string? propertyName = null) =>
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
-

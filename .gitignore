@@ -23,3 +23,11 @@ src/AefAccount/Assets/Operators/*
 Thumbs.db
 .DS_Store
 out/
+
+# Python
+__pycache__/
+*.pyc
+
+# Built art packs (not committed)
+art-v*.zip
+art-v*.zip.sha256

@@ -1,6 +1,5 @@
-﻿using System.Configuration;
-using System.Data;
 using System.Windows;
+using AefAccount.Services;
 
 namespace AefAccount;
 
@@ -9,5 +8,15 @@ namespace AefAccount;
 /// </summary>
 public partial class App : Application
 {
-}
+    protected override void OnStartup(StartupEventArgs e)
+    {
+        // Арт ищем до создания MainWindow: биндинги карточек читают OperatorArt сразу.
+        var artDir = e.Args
+            .FirstOrDefault(arg => arg.StartsWith("--art-dir=", StringComparison.OrdinalIgnoreCase))
+            ?.Split('=', 2)[1];
+        ArtPack.Initialize(artDir);
+        OperatorArt.Initialize();
 
+        base.OnStartup(e);
+    }
+}

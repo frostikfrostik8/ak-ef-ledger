@@ -94,7 +94,7 @@ public sealed class OperatorArtVisibilityConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var kind = OperatorArtConverter.ParseKind(parameter);
-        return OperatorArt.Load(value?.ToString(), kind) == null ? Visibility.Visible : Visibility.Collapsed;
+        return OperatorArt.Has(value?.ToString(), kind) ? Visibility.Collapsed : Visibility.Visible;
     }
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>

@@ -6,11 +6,34 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Filters -->
+        <!-- Арт не установлен: карточки показывают буквы -->
         <Border Grid.Row="0" Background="{DynamicResource Brush.Bg.Panel}"
+                BorderBrush="{DynamicResource Brush.Warn}" BorderThickness="1"
+                Padding="12,8" Margin="0,0,0,12"
+                Visibility="{Binding ShowArtBanner, Converter={StaticResource BoolToVisibility}}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,12,0">
+                    <Rectangle Width="3" Height="16" Fill="{DynamicResource Brush.Warn}" Margin="0,0,10,0"/>
+                    <TextBlock Text="{loc:Loc art_banner_text}" Style="{StaticResource Text.Meta}"
+                               FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="1" Style="{StaticResource GhostButton}" Height="26"
+                        Command="{Binding OpenSettingsCommand}">
+                    <TextBlock Text="{loc:Loc art_banner_action}" FontSize="10" FontWeight="SemiBold"/>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Filters -->
+        <Border Grid.Row="1" Background="{DynamicResource Brush.Bg.Panel}"
                 BorderBrush="{DynamicResource Brush.Line.Soft}" BorderThickness="1"
                 Padding="12,6" Margin="0,0,0,16">
             <Grid>
@@ -51,7 +74,7 @@
             </Grid>
         </Border>
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                 <ItemsControl ItemsSource="{Binding FilteredOperators}" Margin="0,0,4,0">
                     <ItemsControl.ItemsPanel>

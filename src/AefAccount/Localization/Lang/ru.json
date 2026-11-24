@@ -309,4 +309,26 @@
   "diff_was": "было {0}",
   "diff_plated": "плашка: {0}",
   "diff_money": "деньги {0} → {1}"
+,
+
+  "settings_art": "// АРТ ОПЕРАТИВНИКОВ",
+  "settings_art_title": "Арт оперативников",
+  "settings_art_status_missing": "Не установлен — карточки показывают буквы",
+  "settings_art_status_installed": "{0} оперативников · {1} МБ{2}",
+  "settings_art_path_missing": "Папка не найдена. Укажите её вручную или скачайте пак.",
+  "settings_art_download": "Скачать",
+  "settings_art_folder": "Указать папку",
+  "settings_art_zip": "Установить из .zip",
+  "settings_art_open": "Открыть папку",
+  "settings_art_remove": "Убрать",
+  "settings_art_pick_folder": "Папка с артом (icon / portrait / full)",
+  "settings_art_pick_zip": "Архив арт-пака",
+  "settings_art_applied": "Папка выбрана: {0} оперативников.",
+  "settings_art_installed": "Арт-пак установлен: {0} оперативников.",
+  "settings_art_removed": "Арт-пак убран.",
+  "settings_art_download_failed": "Не удалось скачать арт-пак.\nЕсли репозиторий приватный или пак ещё не опубликован, скачайте zip вручную: {0}\n\nОткрыть страницу релиза?",
+  "settings_art_invalid": "В папке или архиве не найден арт оперативников (icon/portrait/full).",
+  "settings_art_confirm_remove": "Убрать арт-пак? Скачанные файлы будут удалены; папка рядом с exe и выбранная вручную останутся.",
+  "art_banner_text": "Арт оперативников не установлен: карточки показывают буквы. Установите пак в настройках.",
+  "art_banner_action": "Настроить"
 }

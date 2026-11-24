@@ -17,16 +17,30 @@ owner approves the visibility switch.
 
 - [ ] `build.cmd` passes on a clean Windows machine with .NET 10 SDK.
 - [ ] GitHub Actions `build` workflow is green.
-- [ ] `AK-EF-Ledger-v0.3.1-win-x64.zip` extracts, `init_db.cmd` creates the DB,
+- [ ] `AK-EF-Ledger-v0.4.0-win-x64.zip` extracts, `init_db.cmd` creates the DB,
       `launch.cmd` opens the app, DEV profile works without a token.
 - [ ] `lang/ru.json` and `lang/en.json` are present in the release package.
+- [ ] Release package contains `assets\operators\vesper\` only; no real art.
+- [ ] `AkEfLedger.exe` is ~5.8 MB and does not embed real operator art.
 - [ ] Version in `SettingsView.xaml`, csproj and release tag match.
 - [ ] `CHANGELOG.md` and release notes are up to date.
+
+## Art pack
+
+- [ ] `tools/make_art_pack.py --source <snapshot> --out <dir>` builds
+      `art-v1.zip` and `art-v1.zip.sha256`.
+- [ ] Release `art-v1` has the `art-v1.zip` asset; the Download button reaches
+      it (or shows the manual-download fallback while private).
+- [ ] Install from the downloaded `.zip` in Settings shows the pack version and
+      operator count; Remove clears it.
+- [ ] Roster banner disappears after install and returns after removal.
+- [ ] Operator art is **not** attached to the public release (copyright).
 
 ## Docs
 
 - [ ] `README.md` and `README.ru.md` render correctly on GitHub.
 - [ ] Language links at the top work.
+- [ ] `docs/art-pack.md` matches the actual manifest and folder layout.
 - [ ] `LICENSE` and `THIRD-PARTY-NOTICES.md` are present.
 - [ ] `SECURITY.md` explains token handling.
 - [ ] Screenshots (if added) contain no account names, tokens or private data.
@@ -35,7 +49,7 @@ owner approves the visibility switch.
 
 - [ ] Owner explicitly approves making the repository public.
 - [ ] `gh repo edit frostikfrostik8/ak-ef-ledger --visibility public --accept-visibility-change-consequences`
-- [ ] Release v0.3.1 is changed from prerelease to latest, if appropriate.
+- [ ] Release v0.4.0 is changed from prerelease to latest, if appropriate.
 - [ ] Watch issues/security advisories after publication.
 
 ## After publication

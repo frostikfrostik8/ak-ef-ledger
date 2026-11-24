@@ -53,8 +53,9 @@ AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
   Bahnschrift, Cascadia Mono, бумажный слой PT Serif.
 - **Интерфейс RU/EN**: автоопределение по языку системы, мгновенное
   переключение и внешние файлы переводов `lang/*.json`.
-- Карточки операторов с локальными `icon` / `portrait` / `full`.
-- Буква-заглушка для операторов без локального арта (новые персонажи из API).
+- Карточки операторов с артами `icon` / `portrait` / `full` из внешней папки
+  `operators/`.
+- Буква-заглушка для операторов без арта (новые персонажи из API).
 - Diff снимков, таймлайн и собственный график без chart-библиотек.
 - Тестовые режимы: случайный оператор без арта, **Веспер** с прозрачными
   AI-ассетами и DEV-профиль из 8 фейковых снимков.
@@ -114,14 +115,15 @@ run.cmd
 ```text
 src/AefAccount/          WPF-приложение
   Assets/Fonts/          Inter + PT Serif (OFL)
-  Assets/Operators/      только тестовая Веспер
+  Assets/Operators/      только тестовая Веспер (реальные арты — снаружи)
   Localization/          LocalizationService + встроенные ru/en JSON
-  Services/              DataService, DiffService, OperatorArt, DevDataService
+  Services/              DataService, DiffService, OperatorArt, ArtPack, DevDataService
   Views/                 Обзор, Ростер, Динамика, Прогресс, Достижения,
                          Снимки, Настройки, OperatorWindow
 scripts/                 snapshot.py, sync.py, aef.py
+tools/                   make_art_pack.py (сборка внешнего арт-пака)
 data/                    schema.sql, seed.sql
-docs/                    release notes, руководство по локализации
+docs/                    release notes, руководства по локализации и артам
 ```
 
 ## Арты операторов
@@ -129,17 +131,43 @@ docs/                    release notes, руководство по локали
 Реальные арты операторов **не** входят в репозиторий: это чужие права и
 большой объём. Приложение работает без них и показывает первую букву имени.
 
-Чтобы подключить свои локальные арты, положите:
+Арты лежат **вне exe**, в папке `operators/`:
 
 ```text
-src/AefAccount/Assets/Operators/<slug>/icon.png
-src/AefAccount/Assets/Operators/<slug>/portrait.png
-src/AefAccount/Assets/Operators/<slug>/full.png
+operators/<slug>/icon.png      120x120
+operators/<slug>/portrait.png  303x386
+operators/<slug>/full.png      до 1200 px
+operators/manifest.json        опционально: версия, имена, хеши
 ```
 
-Карта имён и slug — в `src/AefAccount/Services/OperatorArt.cs`.
+Порядок поиска:
 
-Тестовая **Веспер** лежит в `src/AefAccount/Assets/Operators/vesper/`:
+1. `--art-dir=<path>` — разовый override;
+2. папка, выбранная в **Настройки → Арт оперативников**;
+3. `%LOCALAPPDATA%\AkEfLedger\art\operators` — скачанный пак;
+4. `assets\operators` рядом с exe — portable-сборка;
+5. встроенная Веспер, затем буква имени.
+
+В настройках пак ставится из папки, из `art-v1.zip` или скачивается с GitHub
+Releases. Загрузчик работает по файлам, поэтому обычный снапшот сайта
+подходит и без manifest.
+
+Сборка пака из локального снапшота:
+
+```powershell
+python tools/make_art_pack.py `
+  --source "C:/AEF/dist/design-references/Сайт/operators" `
+  --out "C:/AEF/dist/release/art-v1"
+```
+
+`full` уменьшается до 1200 px и переводится в 256 цветов: 34,1 МБ → 12,5 МБ;
+весь пак — ~17,9 МБ вместо 40. Формат manifest, правила установки и шаги
+публикации — в `docs/art-pack.md`.
+
+Карта имён и slug — в `src/AefAccount/Services/OperatorArt.cs`; manifest может
+добавить aliases для новых оперативников без обновления приложения.
+
+Тестовая **Веспер** встроена из `src/AefAccount/Assets/Operators/vesper/`:
 прозрачные AI-ассеты для проверки интерфейса.
 
 ## Настройки и тестовые данные

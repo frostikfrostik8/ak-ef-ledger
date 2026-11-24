@@ -9,9 +9,9 @@
     <AssemblyName>AkEfLedger</AssemblyName>
     <Product>AK:EF Ledger</Product>
     <Title>AK:EF Ledger</Title>
-    <Version>0.3.1</Version>
-    <FileVersion>0.3.1.0</FileVersion>
-    <AssemblyVersion>0.3.1.0</AssemblyVersion>
+    <Version>0.4.0</Version>
+    <FileVersion>0.4.0.0</FileVersion>
+    <AssemblyVersion>0.4.0.0</AssemblyVersion>
     <ApplicationIcon>Assets\akef.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -19,7 +19,20 @@
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.15" />
     <Resource Include="Assets\akef.ico" />
     <Resource Include="Assets\Fonts\*.ttf" />
-    <Resource Include="Assets\Operators\**\*.png" />
+    <!-- Встроенной остаётся только тестовая Веспер: остальной арт лежит рядом с exe.
+         EmbeddedResource, а не WPF Resource: pack:// URI ломается в single-file publish. -->
+    <EmbeddedResource Include="Assets\Operators\vesper\*.png" />
+  </ItemGroup>
+
+  <!-- Полный арт копируется в assets\operators, а не вшивается в exe.
+       В чистом клоне без реальных артов остаётся только vesper. -->
+  <ItemGroup>
+    <Content Include="Assets\Operators\**\*.png">
+      <Link>assets\operators\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </Content>
   </ItemGroup>
 
   <!-- Языковые файлы: внешние lang/*.json рядом с exe + встроенный резерв. -->
@@ -37,4 +50,3 @@
   </ItemGroup>
 
 </Project>
-

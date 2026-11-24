@@ -309,4 +309,26 @@
   "diff_was": "was {0}",
   "diff_plated": "plate: {0}",
   "diff_money": "money {0} → {1}"
+,
+
+  "settings_art": "// OPERATOR ART",
+  "settings_art_title": "Operator art",
+  "settings_art_status_missing": "Not installed — cards show letters",
+  "settings_art_status_installed": "{0} operators · {1} MB{2}",
+  "settings_art_path_missing": "Folder not found. Pick it manually or download the pack.",
+  "settings_art_download": "Download",
+  "settings_art_folder": "Choose folder",
+  "settings_art_zip": "Install from .zip",
+  "settings_art_open": "Open folder",
+  "settings_art_remove": "Remove",
+  "settings_art_pick_folder": "Art folder (icon / portrait / full)",
+  "settings_art_pick_zip": "Art pack archive",
+  "settings_art_applied": "Folder selected: {0} operators.",
+  "settings_art_installed": "Art pack installed: {0} operators.",
+  "settings_art_removed": "Art pack removed.",
+  "settings_art_download_failed": "Could not download the art pack.\nIf the repository is private or the pack is not published yet, download the zip manually: {0}\n\nOpen the release page?",
+  "settings_art_invalid": "No operator art (icon/portrait/full) found in the folder or archive.",
+  "settings_art_confirm_remove": "Remove the art pack? Downloaded files will be deleted; the folder next to the exe and a manually picked folder stay.",
+  "art_banner_text": "Operator art is not installed: cards show letters. Install the pack in Settings.",
+  "art_banner_action": "Settings"
 }

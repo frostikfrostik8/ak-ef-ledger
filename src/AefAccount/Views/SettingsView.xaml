@@ -67,6 +67,56 @@
                         </StackPanel>
                     </Border>
 
+                    <TextBlock Text="{loc:Loc settings_art}" Style="{StaticResource Text.Kicker}" Margin="0,24,0,8"/>
+                    <Border Style="{StaticResource PanelBorder}" Padding="18">
+                        <StackPanel>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <StackPanel VerticalAlignment="Center" Margin="0,0,12,0">
+                                    <TextBlock Text="{loc:Loc settings_art_title}" Style="{StaticResource Text.H3}" FontSize="13"/>
+                                    <TextBlock Text="{Binding ArtStatusText}" Style="{StaticResource Text.Meta}"
+                                               FontSize="11" TextWrapping="Wrap"/>
+                                </StackPanel>
+                                <Button Grid.Column="1" Style="{StaticResource GhostButton}" VerticalAlignment="Center"
+                                        Click="DownloadArt_Click" IsEnabled="{Binding CanUseArt}">
+                                    <TextBlock Text="{loc:Loc settings_art_download}" FontSize="10" FontWeight="SemiBold"/>
+                                </Button>
+                            </Grid>
+
+                            <TextBlock Text="{Binding ArtPathText}" Style="{StaticResource Text.MonoSmall}"
+                                       FontSize="9" TextWrapping="Wrap" Margin="0,6,0,0"/>
+
+                            <ProgressBar Style="{StaticResource AefProgress}" Height="3" Margin="0,8,0,0"
+                                         Minimum="0" Maximum="100"
+                                         Value="{Binding ArtProgress, Mode=OneWay}"
+                                         Visibility="{Binding IsArtBusy, Converter={StaticResource BoolToVisibility}}"/>
+
+                            <Border Style="{StaticResource Divider}" Margin="0,10,0,10"/>
+
+                            <WrapPanel>
+                                <Button Style="{StaticResource GhostButton}" Height="28" Margin="0,0,6,6"
+                                        Click="PickArtFolder_Click" IsEnabled="{Binding CanUseArt}">
+                                    <TextBlock Text="{loc:Loc settings_art_folder}" FontSize="10" FontWeight="SemiBold"/>
+                                </Button>
+                                <Button Style="{StaticResource GhostButton}" Height="28" Margin="0,0,6,6"
+                                        Click="InstallArtZip_Click" IsEnabled="{Binding CanUseArt}">
+                                    <TextBlock Text="{loc:Loc settings_art_zip}" FontSize="10" FontWeight="SemiBold"/>
+                                </Button>
+                                <Button Style="{StaticResource QuietButton}" Height="28" Margin="0,0,6,6"
+                                        Click="OpenArtFolder_Click">
+                                    <TextBlock Text="{loc:Loc settings_art_open}" FontSize="10" FontWeight="SemiBold"/>
+                                </Button>
+                                <Button Style="{StaticResource QuietButton}" Height="28" Margin="0,0,0,6"
+                                        Click="RemoveArt_Click" IsEnabled="{Binding CanRemoveArtNow}">
+                                    <TextBlock Text="{loc:Loc settings_art_remove}" FontSize="10" FontWeight="SemiBold"/>
+                                </Button>
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
                     <TextBlock Text="{loc:Loc settings_test_data}" Style="{StaticResource Text.Kicker}" Margin="0,24,0,8"/>
                     <Border Style="{StaticResource PanelBorder}" Padding="18">
                         <StackPanel>
@@ -141,7 +191,7 @@
                             </StackPanel>
                             <TextBlock Text="Arknights: Endfield · account terminal" Style="{StaticResource Text.Meta}"
                                        FontSize="11" Margin="12,4,0,0"/>
-                            <TextBlock Text="v0.3.1" Style="{StaticResource Text.MonoSmall}" Margin="12,8,0,0"/>
+                            <TextBlock Text="v0.4.0" Style="{StaticResource Text.MonoSmall}" Margin="12,8,0,0"/>
 
                             <Border Style="{StaticResource Divider}" Margin="0,14,0,12"/>
 
@@ -184,5 +234,3 @@
         </StackPanel>
     </ScrollViewer>
 </UserControl>
-
-

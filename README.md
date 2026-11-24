@@ -51,8 +51,9 @@ updater. Everything else is a local SQLite read.
   Bahnschrift, Cascadia Mono, PT Serif document layer.
 - **RU/EN interface** with system-language auto-detection, instant switching
   and external `lang/*.json` translation files.
-- Operator cards with `icon` / `portrait` / `full` local art support.
-- Letter fallback for operators without local art (new API characters).
+- Operator cards with `icon` / `portrait` / `full` art loaded from an external
+  `operators/` folder.
+- Letter fallback for operators without art (new API characters).
 - Snapshot diff, timeline and custom line chart — no chart library.
 - Test modes: random operator without art, **Vesper** with AI-generated
   transparent art, and a DEV profile with 8 fake snapshots.
@@ -112,14 +113,15 @@ Requires .NET 10 SDK. Python is optional for development; the UI runs without it
 ```text
 src/AefAccount/          WPF application
   Assets/Fonts/          Inter + PT Serif (OFL)
-  Assets/Operators/      test operator Vesper only
+  Assets/Operators/      test operator Vesper (real art is external)
   Localization/          LocalizationService + built-in ru/en JSON
-  Services/              DataService, DiffService, OperatorArt, DevDataService
+  Services/              DataService, DiffService, OperatorArt, ArtPack, DevDataService
   Views/                 Overview, Roster, Dynamics, Progress, Achievements,
                          Snapshots, Settings, OperatorWindow
 scripts/                 snapshot.py, sync.py, aef.py
+tools/                   make_art_pack.py (external art pack builder)
 data/                    schema.sql, seed.sql
-docs/                    release notes, localization guide
+docs/                    release notes, localization and art guides
 ```
 
 ## Operator art
@@ -128,17 +130,43 @@ Real operator art is **not** included in this repository: it is copyrighted
 and large. The app works without it and shows the first letter of the operator
 name as a fallback.
 
-To use your own local art, place:
+Art lives **outside the exe** in an `operators/` folder:
 
 ```text
-src/AefAccount/Assets/Operators/<slug>/icon.png
-src/AefAccount/Assets/Operators/<slug>/portrait.png
-src/AefAccount/Assets/Operators/<slug>/full.png
+operators/<slug>/icon.png      120x120
+operators/<slug>/portrait.png  303x386
+operators/<slug>/full.png      up to 1200 px
+operators/manifest.json        optional: version, names, hashes
 ```
 
-The name-to-slug map is in `src/AefAccount/Services/OperatorArt.cs`.
+Lookup order:
 
-The test operator **Vesper** is included in
+1. `--art-dir=<path>` one-shot override;
+2. folder picked in **Settings → Operator art**;
+3. `%LOCALAPPDATA%\AkEfLedger\art\operators` (downloaded pack);
+4. `assets\operators` next to the exe (portable build);
+5. embedded Vesper, then the letter fallback.
+
+Settings installs a pack from a folder, from `art-v1.zip`, or downloads it
+from GitHub Releases. The loader is file-based, so a plain site snapshot works
+without a manifest.
+
+Build the pack from a local snapshot:
+
+```powershell
+python tools/make_art_pack.py `
+  --source "C:/AEF/dist/design-references/Сайт/operators" `
+  --out "C:/AEF/dist/release/art-v1"
+```
+
+`full` is resized to 1200 px and quantized to 256 colors: 34.1 MB → 12.5 MB;
+the whole pack is ~17.9 MB instead of 40 MB. See `docs/art-pack.md` for the
+manifest format, install rules and release steps.
+
+The name-to-slug map is in `src/AefAccount/Services/OperatorArt.cs`; a
+manifest can add aliases for new operators without an app update.
+
+The test operator **Vesper** is embedded from
 `src/AefAccount/Assets/Operators/vesper/` with AI-generated transparent PNGs
 and is intended for UI testing only.
 

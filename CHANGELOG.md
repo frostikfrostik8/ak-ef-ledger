@@ -1,6 +1,32 @@
 # Changelog
 
-## v0.3.1 — localization (2026-11-24)
+## v0.4.0 - external art pack (2026-11-24)
+
+### Added
+
+- Operator art is loaded from an external `operators/` folder instead of being
+  embedded in the exe. Lookup: `--art-dir` → Settings folder →
+  `%LOCALAPPDATA%\AkEfLedger\art\operators` → `assets\operators` next to the
+  exe → embedded Vesper → letter.
+- **Settings → Operator art**: status, active path, choose folder, install from
+  `.zip`, download from GitHub Releases, open folder, remove.
+- `manifest.json` support: pack version, name aliases, per-file SHA-256.
+  Installation is atomic (staging → verify → swap) and hash-checked.
+- `tools/make_art_pack.py` builds a normalized `art-v1.zip` from a local site
+  snapshot.
+- Roster banner with a Settings shortcut when art is not installed.
+
+### Changed
+
+- Exe dropped from **46.8 MB to 5.8 MB**; art is 40 MB next to the exe or
+  ~17.9 MB as a normalized pack (`full` 1200 px / 256 colors).
+- `OperatorArt.Has` checks the actual file, so the letter fallback appears only
+  when art is really missing (previously it trusted the name map).
+- `settings.json` stores independent keys: saving the language no longer drops
+  other settings.
+- Version bumped to **0.4.0**.
+
+## v0.3.1 - localization (2026-11-24)
 
 ### Added
 
