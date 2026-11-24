@@ -6,5 +6,10 @@ if errorlevel 1 (
   echo Build failed.
   exit /b 1
 )
+if not exist "src\AefAccount\publish\data" mkdir "src\AefAccount\publish\data"
+copy /Y "data\schema.sql" "src\AefAccount\publish\data\" >nul
+copy /Y "data\seed.sql" "src\AefAccount\publish\data\" >nul
+if not exist "src\AefAccount\publish\scripts" mkdir "src\AefAccount\publish\scripts"
+copy /Y "scripts\*.py" "src\AefAccount\publish\scripts\" >nul
 echo Done: src\AefAccount\publish\AkEfLedger.exe
 pause

@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.4.2 - local database fix (2026-11-25)
+
+### Fixed
+
+- The app uses **only its own folder** for `data/`, `scripts/` and
+  `.secrets/`. It no longer walks up into a parent workspace or falls back to
+  `C:\AEF`, which could show a foreign database from a parent folder.
+- `build.cmd` copies `data/schema.sql`, `data/seed.sql` and `scripts/*.py`
+  into the publish folder, so a source build is self-contained.
+
+### Changed
+
+- Version bumped to **0.4.2**. UI unchanged; README screenshots are from 0.4.1.
+
 ## v0.4.1 - key onboarding (2026-11-25)
 
 ### Added

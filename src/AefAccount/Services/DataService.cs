@@ -20,16 +20,9 @@ public sealed class DataService
 
     public static string FindRepoRoot()
     {
-        var directory = new DirectoryInfo(AppContext.BaseDirectory);
-        while (directory != null)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "data", "aef.db")))
-            {
-                return directory.FullName;
-            }
-            directory = directory.Parent;
-        }
-        return Directory.Exists(@"C:\AEF") ? @"C:\AEF" : Directory.GetCurrentDirectory();
+        // The app is portable: data/, scripts/ and .secrets/ live next to the exe.
+        // Never walk into a parent workspace and pick up a foreign database.
+        return Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
     }
 
     public bool DatabaseExists => File.Exists(DbPath);

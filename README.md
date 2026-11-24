@@ -123,6 +123,9 @@ The repository is **public**. The main app build contains no real operator art
 and no keys; the art pack is a separate release. See the
 [releases](https://github.com/frostikfrostik8/ak-ef-ledger/releases).
 
+**v0.4.2** is a local database resolution fix; the UI is unchanged, so the
+README screenshots are from v0.4.1.
+
 ## Installation (release package)
 
 1. Install **.NET 10 Desktop Runtime** and **Python 3.10+**.
@@ -146,6 +149,10 @@ cd ak-ef-ledger
 .\build.cmd
 .\run.cmd
 ```
+
+`build.cmd` copies `data/schema.sql`, `data/seed.sql` and `scripts/*.py` into
+`src/AefAccount/publish`. If there is no database yet, run
+`python scripts\aef.py init` from `src\AefAccount\publish`.
 
 ## FAQ
 

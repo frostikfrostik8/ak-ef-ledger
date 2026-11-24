@@ -121,6 +121,9 @@ AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
 операторов и ключей; арт-пак — отдельный релиз. Скачать:
 [github.com/frostikfrostik8/ak-ef-ledger/releases](https://github.com/frostikfrostik8/ak-ef-ledger/releases).
 
+**v0.4.2** — исправление поиска локальной БД; интерфейс не менялся,
+скриншоты сняты на v0.4.1.
+
 ## Установка (пакет релиза)
 
 1. Установи **.NET 10 Desktop Runtime** и **Python 3.10+**.
@@ -145,6 +148,10 @@ cd ak-ef-ledger
 .\build.cmd
 .\run.cmd
 ```
+
+`build.cmd` копирует `data/schema.sql`, `data/seed.sql` и `scripts/*.py` в
+`src/AefAccount/publish`. Если БД ещё нет: перейди в `src\AefAccount\publish`
+и выполни `python scripts\aef.py init`.
 
 ## FAQ
 
