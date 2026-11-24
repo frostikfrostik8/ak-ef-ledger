@@ -191,7 +191,7 @@
                             </StackPanel>
                             <TextBlock Text="Arknights: Endfield · account terminal" Style="{StaticResource Text.Meta}"
                                        FontSize="11" Margin="12,4,0,0"/>
-                            <TextBlock Text="v0.4.0" Style="{StaticResource Text.MonoSmall}" Margin="12,8,0,0"/>
+                            <TextBlock Text="v0.4.1" Style="{StaticResource Text.MonoSmall}" Margin="12,8,0,0"/>
 
                             <Border Style="{StaticResource Divider}" Margin="0,14,0,12"/>
 
@@ -212,11 +212,33 @@
                                 <TextBlock Text="{loc:Loc settings_open_site}" FontSize="10" FontWeight="SemiBold"/>
                             </Button>
                             <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
+                                    Click="OpenRepository_Click" Margin="0,0,0,6">
+                                <TextBlock Text="{loc:Loc settings_repository}" FontSize="10" FontWeight="SemiBold"/>
+                            </Button>
+                            <Button Style="{StaticResource GhostButton}" HorizontalAlignment="Left"
                                     Click="OpenLangFolder_Click">
                                 <TextBlock Text="{loc:Loc settings_open_lang_folder}" FontSize="10" FontWeight="SemiBold"/>
                             </Button>
                             <TextBlock Text="endfield.gryphline.com" Style="{StaticResource Text.MonoSmall}"
                                        FontSize="9" Foreground="{DynamicResource Brush.Text.Faint}" Margin="0,6,0,0"/>
+
+                            <Border Style="{StaticResource Divider}" Margin="0,14,0,12"/>
+
+                            <TextBlock Text="{loc:Loc settings_creator}" Style="{StaticResource Text.Kicker}" FontSize="9"/>
+                            <TextBlock Text="frostikfrostik8" Style="{StaticResource Text.H3}"
+                                       FontSize="13" Margin="0,4,0,0"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                <Button Style="{StaticResource GhostButton}" Height="26" Padding="8,0"
+                                        Click="OpenGitHubProfile_Click" Margin="0,0,4,0">
+                                    <TextBlock Text="GitHub" FontSize="9" FontWeight="SemiBold"/>
+                                </Button>
+                                <Button Style="{StaticResource GhostButton}" Height="26" Padding="8,0"
+                                        Click="CopyDiscord_Click">
+                                    <TextBlock Text="Discord · frostikfrostik8" FontSize="9" FontWeight="SemiBold"/>
+                                </Button>
+                            </StackPanel>
+                            <TextBlock Text="{loc:Loc settings_discord_hint}" Style="{StaticResource Text.MonoSmall}"
+                                       FontSize="9" TextWrapping="Wrap" Margin="0,6,0,0"/>
                         </StackPanel>
                     </Border>
 

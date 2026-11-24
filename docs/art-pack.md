@@ -120,9 +120,8 @@ the limit.
    https://github.com/frostikfrostik8/ak-ef-ledger/releases/download/art-v1/art-v1.zip
    ```
 
-While the repository is private, the download requires authentication and the
-button falls back to the release page. Install from a manually downloaded
-`.zip` instead.
+The `art-v1` release is public: the **Download** button downloads the pack
+directly from GitHub Releases.
 
 GitHub Releases is transport, not a trust root: the pack format is versioned
 and per-file hashes are verified. A future signature can be added on top
@@ -130,6 +129,7 @@ without changing the folder layout.
 
 ## Copyright
 
-Operator art belongs to HYPERGRYPH / GRYPHLINE. Do not commit real art to the
-public repository and do not attach it to a public release. The repository
-contains only the AI-generated test operator **Vesper**.
+Operator art belongs to HYPERGRYPH / GRYPHLINE. The repository contains only
+the AI-generated test operator **Vesper**; real art files are not committed.
+The pack is published as the separate public `art-v1` release (owner's
+decision).

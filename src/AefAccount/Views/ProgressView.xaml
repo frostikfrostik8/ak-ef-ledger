@@ -20,7 +20,7 @@
                                     <StackPanel HorizontalAlignment="Right">
                                         <TextBlock Text="{Binding Level}" Style="{StaticResource Text.Value}"
                                                    FontSize="26" HorizontalAlignment="Right"/>
-                                        <TextBlock Text="DOMAIN LEVEL" Style="{StaticResource Text.Kicker}"
+                                        <TextBlock Text="{loc:Loc progress_region_level}" Style="{StaticResource Text.Kicker}"
                                                    FontSize="9" HorizontalAlignment="Right"/>
                                     </StackPanel>
                                 </Grid>
@@ -32,7 +32,9 @@
                                                Style="{StaticResource Text.MonoSmall}" HorizontalAlignment="Right"/>
                                 </Grid>
                                 <ProgressBar Style="{StaticResource AefProgress}" Value="{Binding OverallPercent, Mode=OneWay}" Foreground="{Binding OverallPercent, Converter={StaticResource ProgressBrush}}" Margin="0,6,0,0"/>
-                                <ItemsControl ItemsSource="{Binding Settlements}" Margin="0,14,0,0">
+                                <TextBlock Text="{loc:Loc progress_outposts}" Style="{StaticResource Text.Kicker}"
+                                           FontSize="9" Margin="0,14,0,6"/>
+                                <ItemsControl ItemsSource="{Binding Settlements}" Margin="0,0,0,0">
                                     <ItemsControl.ItemsPanel>
                                         <ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate>
                                     </ItemsControl.ItemsPanel>

@@ -10,14 +10,15 @@ owner approves the visibility switch.
       data in the repository.
 - [ ] Release zip contains no `data/aef.db`, no `.secrets` token and no
       `data/snapshots`.
-- [ ] Real operator art is not committed; only
-      `src/AefAccount/Assets/Operators/vesper/` is present.
+- [ ] Real operator art files are not committed; only
+      `src/AefAccount/Assets/Operators/vesper/` is present. Screenshots under
+      `docs/screenshots/` are illustrative; art files themselves are not tracked.
 
 ## Build and release
 
 - [ ] `build.cmd` passes on a clean Windows machine with .NET 10 SDK.
 - [ ] GitHub Actions `build` workflow is green.
-- [ ] `AK-EF-Ledger-v0.4.0-win-x64.zip` extracts, `init_db.cmd` creates the DB,
+- [ ] `AK-EF-Ledger-v0.4.1-win-x64.zip` extracts, `init_db.cmd` creates the DB,
       `launch.cmd` opens the app, DEV profile works without a token.
 - [ ] `lang/ru.json` and `lang/en.json` are present in the release package.
 - [ ] Release package contains `assets\operators\vesper\` only; no real art.
@@ -49,14 +50,13 @@ owner approves the visibility switch.
 
 - [ ] Owner explicitly approves making the repository public.
 - [ ] `gh repo edit frostikfrostik8/ak-ef-ledger --visibility public --accept-visibility-change-consequences`
-- [ ] Release v0.4.0 is changed from prerelease to latest, if appropriate.
+- [ ] Release v0.4.1 is the latest public release.
 - [ ] Watch issues/security advisories after publication.
 
 ## After publication
 
 - [ ] Add issue/PR templates if outside contributions are welcome.
-- [ ] Add screenshots to README.
-- [ ] Decide whether to publish a public release with real operator art
-      (not recommended: copyright) or keep the art local-only.
+- [x] Add screenshots to README.
+- [x] Art pack is published as the separate public `art-v1` release (owner
+      approved). The main app release contains no art files.
 - [ ] Consider GitHub Pages for the user guide.
-

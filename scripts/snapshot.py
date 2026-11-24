@@ -807,8 +807,8 @@ def build_counters(detail: dict, extras: dict, achieve_count: int | None) -> dic
         money = domain.get("moneyMgr") or {}
         if not isinstance(money, dict):
             money = {}
-        add(f"domain.{domain_id}.money_total", f"Домен {domain_name} — казна (всего)", money.get("total"))
-        add(f"domain.{domain_id}.money_count", f"Домен {domain_name} — казна (накоплено)", money.get("count"))
+        add(f"domain.{domain_id}.money_total", f"Регион {domain_name} — казна (всего)", money.get("total"))
+        add(f"domain.{domain_id}.money_count", f"Регион {domain_name} — казна (накоплено)", money.get("count"))
 
     for index, room in enumerate((detail.get("spaceShip") or {}).get("rooms") or []):
         if isinstance(room, dict):
@@ -1847,11 +1847,11 @@ def render_diff_md(diff: dict | None) -> str:
                 lines.append(f"- {item['label']}: {fmt_value(old_value)} → {fmt_value(new_value)}")
         lines.append("")
     if diff["domains"]:
-        lines.append("**Домены**")
+        lines.append("**Регионы**")
         lines.extend(f"- {line}" for line in diff["domains"])
         lines.append("")
     if diff["settlements"]:
-        lines.append("**Поселения**")
+        lines.append("**Аванпосты**")
         lines.extend(f"- {line}" for line in diff["settlements"])
         lines.append("")
     if diff["collections"]:
@@ -1983,7 +1983,7 @@ def render_achievements(achs: list[dict], achieve_count: int | None) -> str:
 
 def render_domains(domains: list[dict], settlements: list[dict], collections: list[dict]) -> str:
     if not domains:
-        return "_Домены не пришли в ответе._"
+        return "_Регионы не пришли в ответе._"
     lines: list[str] = []
     for domain in sorted(domains, key=lambda item: item.get("name") or ""):
         lines.append(f"### {domain.get('name') or domain['domain_id']} — уровень {fmt_num(domain.get('level'))}")
@@ -1994,7 +1994,7 @@ def render_domains(domains: list[dict], settlements: list[dict], collections: li
                 f"{s.get('name') or s['settlement_id']} ур.{fmt_num(s.get('level'))}"
                 for s in sorted(own_settlements, key=lambda item: item.get("name") or "")
             ]
-            lines.append("**Поселения:** " + " · ".join(parts))
+            lines.append("**Аванпосты:** " + " · ".join(parts))
         if domain.get("money_total") is not None or domain.get("money_count") is not None:
             lines.append(
                 f"**Казна:** {fmt_num(domain.get('money_count'))} / {fmt_num(domain.get('money_total'))}"
@@ -2203,7 +2203,7 @@ def render_full_md(data: dict, diff: dict | None) -> str:
         "",
         render_achievements(data["achs_list"], snap.get("achieve_count")),
         "",
-        "## Домены",
+        "## Регионы",
         "",
         render_domains(
             list(data["domains"].values()),

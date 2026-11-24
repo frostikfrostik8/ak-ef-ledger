@@ -1,5 +1,24 @@
 # Changelog
 
+## v0.4.1 - key onboarding (2026-11-25)
+
+### Added
+
+- **First-run access key screen** in the Endfield UI style: masked input
+  (`*`), "never share your key" note, links to `skport.com` and the token page,
+  and two pill buttons — **Exit** and **Save**.
+- The prompt appears on startup without a key, when the token file disappears
+  while the app is running, and before a snapshot if the key is missing.
+- Saving writes `.secrets/endfield_token.txt` atomically (or the active token
+  file used by `snapshot.py`) and closes the prompt.
+- Settings → About: repository link, creator **frostikfrostik8**, GitHub
+  profile button and Discord handle (click to copy).
+- Sidebar: repository link below the official site.
+
+### Changed
+
+- Version bumped to **0.4.1**.
+
 ## v0.4.0 - external art pack (2026-11-24)
 
 ### Added

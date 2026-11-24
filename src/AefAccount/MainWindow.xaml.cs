@@ -1,9 +1,12 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Threading;
 using AefAccount.Localization;
 using AefAccount.Models;
+using AefAccount.Services;
 using AefAccount.ViewModels;
 using AefAccount.Views;
 
@@ -12,6 +15,8 @@ namespace AefAccount;
 public partial class MainWindow : Window
 {
     private bool _ready;
+    private bool _tokenPromptVisible;
+    private FileSystemWatcher? _tokenWatcher;
 
     public MainViewModel ViewModel { get; } = new();
 
@@ -20,10 +25,16 @@ public partial class MainWindow : Window
         InitializeComponent();
         DataContext = ViewModel;
         ViewModel.NavigateRequested += (_, key) => NavigateTo(key);
+        ViewModel.TokenRequired += (_, _) => ShowTokenPrompt();
         Loaded += MainWindow_Loaded;
         StateChanged += (_, _) => UpdateMaximizeIcon();
+        Activated += (_, _) => EnsureTokenPrompt();
         LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
-        Closed += (_, _) => LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
+        Closed += (_, _) =>
+        {
+            LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
+            _tokenWatcher?.Dispose();
+        };
     }
 
     private void OnLanguageChanged(object? sender, EventArgs e)
@@ -103,6 +114,143 @@ public partial class MainWindow : Window
             case "dev":
                 ViewModel.LoadDevProfileCommand.Execute(null);
                 break;
+        }
+
+        StartTokenWatcher();
+        EnsureTokenPrompt();
+    }
+
+    private void StartTokenWatcher()
+    {
+        try
+        {
+            var directory = TokenService.SecretsDirectory(ViewModel.RepoRoot);
+            Directory.CreateDirectory(directory);
+            _tokenWatcher = new FileSystemWatcher(directory)
+            {
+                IncludeSubdirectories = false,
+                NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size,
+                EnableRaisingEvents = true,
+            };
+            _tokenWatcher.Created += (_, _) => ScheduleTokenCheck();
+            _tokenWatcher.Changed += (_, _) => ScheduleTokenCheck();
+            _tokenWatcher.Deleted += (_, _) => ScheduleTokenCheck();
+            _tokenWatcher.Renamed += (_, _) => ScheduleTokenCheck();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            // Проверка на Activated и перед снимком всё равно сработает.
+        }
+    }
+
+    private void ScheduleTokenCheck() =>
+        Dispatcher.BeginInvoke(new Action(EnsureTokenPrompt), DispatcherPriority.Background);
+
+    private void EnsureTokenPrompt()
+    {
+        if (TokenService.HasToken(ViewModel.RepoRoot))
+        {
+            if (_tokenPromptVisible) HideTokenPrompt();
+            return;
+        }
+
+        ShowTokenPrompt();
+    }
+
+    private void ShowTokenPrompt()
+    {
+        if (_tokenPromptVisible)
+        {
+            TokenInput.Focus();
+            return;
+        }
+
+        _tokenPromptVisible = true;
+        TokenError.Visibility = Visibility.Collapsed;
+        TokenInput.Clear();
+        TokenOverlay.Visibility = Visibility.Visible;
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            TokenInput.Focus();
+            Keyboard.Focus(TokenInput);
+        }), DispatcherPriority.Input);
+    }
+
+    private void HideTokenPrompt()
+    {
+        _tokenPromptVisible = false;
+        TokenOverlay.Visibility = Visibility.Collapsed;
+        TokenInput.Clear();
+        TokenError.Visibility = Visibility.Collapsed;
+    }
+
+    private void TokenInput_PasswordChanged(object sender, RoutedEventArgs e)
+    {
+        if (TokenError.Visibility == Visibility.Visible) TokenError.Visibility = Visibility.Collapsed;
+    }
+
+    private void TokenInput_KeyDown(object sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter) return;
+        e.Handled = true;
+        SaveToken();
+    }
+
+    private void TokenSave_Click(object sender, RoutedEventArgs e) => SaveToken();
+
+    private void SaveToken()
+    {
+        var token = TokenInput.Password.Trim();
+        if (token.Length == 0)
+        {
+            ShowTokenError(L.T("token_error_empty"));
+            return;
+        }
+        if (token.Length < 16)
+        {
+            ShowTokenError(L.T("token_error_short"));
+            return;
+        }
+
+        try
+        {
+            TokenService.Save(ViewModel.RepoRoot, token);
+            HideTokenPrompt();
+            ViewModel.SetSettingsStatus(L.T("token_status_saved"));
+            ViewModel.SetStatus(L.T("token_status_saved"));
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            ShowTokenError(L.T("token_error_save"));
+        }
+    }
+
+    private void ShowTokenError(string message)
+    {
+        TokenError.Text = message;
+        TokenError.Visibility = Visibility.Visible;
+        TokenInput.Focus();
+    }
+
+    private void TokenExit_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void OpenSkport_Click(object sender, RoutedEventArgs e) => OpenUrl("https://www.skport.com/");
+
+    private void OpenTokenPage_Click(object sender, RoutedEventArgs e) =>
+        OpenUrl("https://web-api.skport.com/cookie_store/account_token");
+
+    private void OpenRepository_Click(object sender, RoutedEventArgs e) =>
+        OpenUrl("https://github.com/frostikfrostik8/ak-ef-ledger");
+
+    private static void OpenUrl(string url)
+    {
+        try
+        {
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+        }
+        catch
+        {
+            // Ссылка не критична для работы приложения.
         }
     }
 

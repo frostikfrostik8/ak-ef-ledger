@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using AefAccount.Localization;
@@ -23,6 +24,25 @@ public partial class SettingsView : UserControl
 
     private void OpenSite_Click(object sender, RoutedEventArgs e) =>
         OpenUrl("https://endfield.gryphline.com/");
+
+    private void OpenRepository_Click(object sender, RoutedEventArgs e) =>
+        OpenUrl("https://github.com/frostikfrostik8/ak-ef-ledger");
+
+    private void OpenGitHubProfile_Click(object sender, RoutedEventArgs e) =>
+        OpenUrl("https://github.com/frostikfrostik8");
+
+    private void CopyDiscord_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            Clipboard.SetText("frostikfrostik8");
+            ViewModel?.SetSettingsStatus(L.T("settings_discord_copied"));
+        }
+        catch (Exception exception) when (exception is ExternalException or ArgumentException)
+        {
+            // Буфер обмена может быть занят другим процессом.
+        }
+    }
 
     private void OpenLangFolder_Click(object sender, RoutedEventArgs e)
     {

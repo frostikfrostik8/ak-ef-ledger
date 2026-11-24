@@ -121,6 +121,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public event EventHandler<string>? NavigateRequested;
 
+    /// <summary>Ключ пропал или не задан: окно показывает ввод ключа.</summary>
+    public event EventHandler? TokenRequired;
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public string RepoRoot => _dataService.RepoRoot;
@@ -143,7 +146,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         new NavItem { Key = "overview", LabelKey = "nav_overview", Icon = "\uE80F", Eyebrow = "// OVERVIEW" },
         new NavItem { Key = "roster", LabelKey = "nav_roster", Icon = "\uE716", Eyebrow = "// ROSTER" },
         new NavItem { Key = "dynamics", LabelKey = "nav_dynamics", Icon = "\uE9D9", Eyebrow = "// TIMELINE" },
-        new NavItem { Key = "progress", LabelKey = "nav_progress", Icon = "\uE909", Eyebrow = "// DOMAINS / EVENTS" },
+        new NavItem { Key = "progress", LabelKey = "nav_progress", Icon = "\uE909", Eyebrow = "// REGIONS / EVENTS" },
         new NavItem { Key = "achievements", LabelKey = "nav_achievements", Icon = "\uE7C1", Eyebrow = "// ACHIEVEMENTS" },
         new NavItem { Key = "snapshots", LabelKey = "nav_snapshots", Icon = "\uE81C", Eyebrow = "// ARCHIVE" },
         new NavItem { Key = "settings", LabelKey = "nav_settings", Icon = "\uE713", Eyebrow = "// SETTINGS" },
@@ -363,6 +366,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public void SetSettingsStatus(string message, bool error = false)
     {
         SettingsStatus = message;
+        StatusIsError = error;
+    }
+
+    public void SetStatus(string message, bool error = false)
+    {
+        StatusMessage = message;
         StatusIsError = error;
     }
 
@@ -1051,6 +1060,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private async Task TakeSnapshotAsync()
     {
         if (IsBusy) return;
+        if (!TokenService.HasToken(RepoRoot))
+        {
+            TokenRequired?.Invoke(this, EventArgs.Empty);
+            return;
+        }
         IsBusy = true;
         BusyText = L.T("status_taking_snapshot");
         StatusIsError = false;

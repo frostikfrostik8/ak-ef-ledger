@@ -1,210 +1,187 @@
-# AK:EF Ledger
+# AK:EF Ledger — Arknights: Endfield account dashboard for Windows
 
 [English](README.md) | [Русский](README.ru.md)
 
-A local Windows desktop dashboard for **Arknights: Endfield** account data:
-roster, resources, domains, achievements, snapshot history and dynamics.
-Built with .NET 10 LTS / WPF. No web server, no browser, no telemetry.
+> **AK:EF Ledger** is an unofficial local **Arknights: Endfield** account
+> dashboard for Windows: roster, resources, achievements, regions, outposts,
+> snapshot history and dynamics. Built with .NET 10 / WPF and SQLite. No web
+> server, no browser, no telemetry.
 
-> **Unofficial fan project.** Not affiliated with HYPERGRYPH, GRYPHLINE or
-> Arknights: Endfield. Game names and trademarks belong to their owners.
->
-> **Status: private preview.** The repository stays private while the release
-> is being polished. The code, docs and release package are already prepared
-> for a public release.
+![Account overview: resources, progress and diff](docs/screenshots/overview.png)
+<sub>AK:EF Ledger v0.4.1 · Windows 11 · 1480×920</sub>
 
 ## What it is
 
-`AK:EF Ledger` reads your own snapshots from a local SQLite database and shows
-them in a dense “engineering terminal” UI:
+**AK:EF Ledger** is a desktop app for Windows that shows your **Arknights:
+Endfield** account in one place. It is not a browser, a web panel or a website:
+it is a regular `.exe` that reads a local SQLite database and works without the
+internet except when you take a snapshot.
 
-- **Overview** — player, patch, Sanity/BP/dailies/weeklies, credits, Seek,
-  collection counters and the diff from the previous snapshot.
-- **Roster** — search by RU/EN name, filters by rarity/element/class, operator
-  cards and a paper-document detail window with weapon, gear, skills, talents.
-- **Dynamics** — chart over snapshots, timeline, arbitrary A/B snapshot diff.
-- **Progress** — domains, settlements, collections, Crisis Contract, War
-  Echoes, Indie groups, inventory.
-- **Achievements** — search, categories, plated badges.
-- **Snapshots** — dense archive table, Markdown report, raw JSON.
-- **Settings** — RU/EN interface language (auto-detected, switchable without
-  restart), test operators, in-memory DEV snapshot profile, test-data reset.
+Endfield spreads useful information across several screens: how much Sanity and
+credits you have, what gear an operator uses, what changed since last week, how
+many achievements are done, which regions and outposts are developed. The app
+collects it into an "engineering terminal": dense tables, charts, a diff between
+snapshots and operator cards.
 
-## Data flow
+Data comes from the **Skport API** through `scripts/snapshot.py`. A snapshot is
+saved to `data/aef.db` and `data/snapshots/`, so you can browse the history
+offline, compare any two snapshots and not depend on what the website shows
+right now.
 
-```text
-Skport API
-   │  scripts/snapshot.py (only when you press “Снять снимок”)
-   ▼
-data/snapshots/*.json.gz  +  data/aef.db
-   │
-   ▼
-AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
-```
+If you searched for "Arknights: Endfield dashboard", "Endfield account tracker",
+"Endfield roster viewer", "AK:EF Ledger" or "how to view Endfield resources on
+PC" — this is it.
 
-The app never talks to a server by itself. Python is used only for the snapshot
-updater. Everything else is a local SQLite read.
+## Who it is for
+
+- Players who want to see their **Arknights: Endfield** account as a whole,
+  not one screen at a time.
+- Players who keep a history: what resources were there, what changed, how the
+  roster and progress grew.
+- Players who do not want to give account data to third-party websites: the app
+  is local, the database is yours, there is no cloud and no telemetry.
+- Developers interested in a WPF app with SQLite, diff, localization and
+  external assets.
 
 ## Features
 
-- Dark terminal visual system: `#FFFA00` accent, 0–2 px radii, Inter,
-  Bahnschrift, Cascadia Mono, PT Serif document layer.
-- **RU/EN interface** with system-language auto-detection, instant switching
-  and external `lang/*.json` translation files.
-- Operator cards with `icon` / `portrait` / `full` art loaded from an external
-  `operators/` folder.
-- Letter fallback for operators without art (new API characters).
-- Snapshot diff, timeline and custom line chart — no chart library.
-- Test modes: random operator without art, **Vesper** with AI-generated
-  transparent art, and a DEV profile with 8 fake snapshots.
-- No telemetry, no analytics, no background network calls.
+- **Overview** — player, patch, Sanity, BP, dailies, weeklies, credits, Seek,
+  collection counters and the diff from the previous snapshot.
+- **Roster** — search by RU/EN name, filters by rarity, element and class,
+  operator cards, and a detail window with weapon, gear, skills and talents.
+- **Dynamics** — chart over snapshots, timeline, and A/B comparison of any two
+  snapshots.
+- **Progress** — regions, outposts, collections, Crisis Contract, War Echoes,
+  Indie groups and inventory.
+- **Achievements** — search, categories and plated badges.
+- **Snapshots** — dense archive, Markdown report and raw JSON.
+- **Settings** — RU/EN interface, test operators, DEV profile, art pack.
+- **Skport key** — a separate first-run screen: masked input `*`, Skport links,
+  and **Exit** / **Save** buttons.
+- **Operator art** — an external `operators/` folder with `icon` / `portrait` /
+  `full`; install from a folder, a zip or GitHub Releases.
+- **No telemetry** — the app sends no analytics and does no background work.
 
-## Quick start (release package)
+## Screenshots
+
+<!-- Screenshots show a local build with an optional art pack; the art files
+themselves are not part of the repository. -->
+
+| Overview | Roster |
+|---|---|
+| ![Overview: resources and diff](docs/screenshots/overview.png) | ![Operator roster](docs/screenshots/roster.png) |
+| <sub>AK:EF Ledger v0.4.1 · 1480×920</sub> | <sub>AK:EF Ledger v0.4.1 · 1480×920</sub> |
+
+| Dynamics | Skport key |
+|---|---|
+| ![Snapshot chart and comparison](docs/screenshots/dynamics.png) | ![Skport key screen](docs/screenshots/key.png) |
+| <sub>AK:EF Ledger v0.4.1 · test snapshots</sub> | <sub>AK:EF Ledger v0.4.1 · 1480×920</sub> |
+
+![Settings: language, art pack, creator](docs/screenshots/settings.png)
+<sub>AK:EF Ledger v0.4.1 · Windows 11 · 1480×920</sub>
+
+Screenshots show a local build with an optional art pack; the art files
+themselves are not part of the repository.
+
+## How it works
+
+```text
+Skport API
+   ↓  scripts/snapshot.py (only when you press "Take snapshot")
+data/snapshots/*.json.gz  +  data/aef.db
+   ↓
+AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
+```
+
+The app never talks to the network by itself. Python is needed only for the
+snapshot updater: `snapshot.py` reads the key from `.secrets/` and calls the
+Skport API. Viewing, filters, charts and diff work fully offline.
+
+## Key and privacy
+
+- The Skport key is entered in the app and stored only in
+  `.secrets/endfield_token.txt`.
+- The app does not send the key anywhere and does not write it to logs.
+- Only `snapshot.py` reads the key and passes it directly to the Skport API.
+- `data/aef.db`, `data/snapshots/` and `.secrets/` are not committed.
+- No cloud, no accounts, no analytics, no background network calls.
+
+## Translation
+
+The UI translation is a **draft**: RU/EN already exist, but wording and terms
+will be refined. Strings that come from the API — achievement names, weapons,
+regions and items — are currently shown as a **direct translation without
+adaptation**. In the future they will be properly translated and adapted.
+
+## Project status
+
+The project is under active development. This is **not** a final product: the
+UI, database schema and snapshot format may change. **Old snapshots may stop
+working after an update** — back up `data/` before upgrading.
+
+The repository is **public**. The main app build contains no real operator art
+and no keys; the art pack is a separate release. See the
+[releases](https://github.com/frostikfrostik8/ak-ef-ledger/releases).
+
+## Installation (release package)
 
 1. Install **.NET 10 Desktop Runtime** and **Python 3.10+**.
-2. Extract the release zip.
-3. Create the local database:
+2. Download the latest release and extract it.
+3. Create the database: `init_db.cmd`.
+4. Paste the Skport key into the first-run window, or into
+   `.secrets/endfield_token.txt` (one line, no quotes).
+5. Take the first snapshot: `update_snapshot.cmd`.
+6. Start: `launch.cmd` or `AkEfLedger.exe`.
 
-   ```cmd
-   init_db.cmd
-   ```
-
-4. Put your Skport token into `.secrets/endfield_token.txt`
-   (one line, no quotes).
-5. Take the first snapshot:
-
-   ```cmd
-   update_snapshot.cmd
-   ```
-
-6. Start:
-
-   ```cmd
-   launch.cmd
-   ```
-
-The token is used only by `scripts/snapshot.py` and stays on your machine.
+Operator art is not part of the main app package: the app falls back to the
+first letter of the name, and the art pack is installed separately in
+**Settings → Operator art**.
 
 ## Build from source
 
-```powershell
-dotnet publish "src\AefAccount\AefAccount.csproj" -c Release -r win-x64 `
-  --self-contained false -p:PublishSingleFile=true `
-  -p:IncludeNativeLibrariesForSelfExtract=true `
-  -o "src\AefAccount\publish"
-```
-
-or:
-
-```cmd
-build.cmd
-```
-
-Run:
-
-```cmd
-run.cmd
-```
-
-Requires .NET 10 SDK. Python is optional for development; the UI runs without it.
-
-## Repository layout
-
-```text
-src/AefAccount/          WPF application
-  Assets/Fonts/          Inter + PT Serif (OFL)
-  Assets/Operators/      test operator Vesper (real art is external)
-  Localization/          LocalizationService + built-in ru/en JSON
-  Services/              DataService, DiffService, OperatorArt, ArtPack, DevDataService
-  Views/                 Overview, Roster, Dynamics, Progress, Achievements,
-                         Snapshots, Settings, OperatorWindow
-scripts/                 snapshot.py, sync.py, aef.py
-tools/                   make_art_pack.py (external art pack builder)
-data/                    schema.sql, seed.sql
-docs/                    release notes, localization and art guides
-```
-
-## Operator art
-
-Real operator art is **not** included in this repository: it is copyrighted
-and large. The app works without it and shows the first letter of the operator
-name as a fallback.
-
-Art lives **outside the exe** in an `operators/` folder:
-
-```text
-operators/<slug>/icon.png      120x120
-operators/<slug>/portrait.png  303x386
-operators/<slug>/full.png      up to 1200 px
-operators/manifest.json        optional: version, names, hashes
-```
-
-Lookup order:
-
-1. `--art-dir=<path>` one-shot override;
-2. folder picked in **Settings → Operator art**;
-3. `%LOCALAPPDATA%\AkEfLedger\art\operators` (downloaded pack);
-4. `assets\operators` next to the exe (portable build);
-5. embedded Vesper, then the letter fallback.
-
-Settings installs a pack from a folder, from `art-v1.zip`, or downloads it
-from GitHub Releases. The loader is file-based, so a plain site snapshot works
-without a manifest.
-
-Build the pack from a local snapshot:
+Requires **.NET 10 SDK**.
 
 ```powershell
-python tools/make_art_pack.py `
-  --source "C:/AEF/dist/design-references/Сайт/operators" `
-  --out "C:/AEF/dist/release/art-v1"
+cd ak-ef-ledger
+.\build.cmd
+.\run.cmd
 ```
 
-`full` is resized to 1200 px and quantized to 256 colors: 34.1 MB → 12.5 MB;
-the whole pack is ~17.9 MB instead of 40 MB. See `docs/art-pack.md` for the
-manifest format, install rules and release steps.
+## FAQ
 
-The name-to-slug map is in `src/AefAccount/Services/OperatorArt.cs`; a
-manifest can add aliases for new operators without an app update.
+**What is Arknights: Endfield?**
+A tactical open-world game by Hypergryph/Gryphline, a continuation of the
+Arknights universe. An account stores the roster, resources, achievements and
+progress.
 
-The test operator **Vesper** is embedded from
-`src/AefAccount/Assets/Operators/vesper/` with AI-generated transparent PNGs
-and is intended for UI testing only.
+**Is this an official app?**
+No. AK:EF Ledger is an unofficial fan project, not affiliated with HYPERGRYPH,
+GRYPHLINE or Skport.
 
-## Settings and test data
+**Where does the data come from?**
+From the Skport API through `scripts/snapshot.py`. The app only reads the local
+SQLite database.
 
-- **Language** — RU/EN interface, auto-detected from Windows on first launch.
-  Switching applies instantly, without restarting the app. Translations live in
-  external `lang/*.json` files; add a new file to add a language. See
-  [docs/localization.md](docs/localization.md).
-- **Show test operators** — toggles test cards in Roster and “Core”.
-- **DEV snapshot profile** — 8 in-memory snapshots (IDs 9001–9008) with
-  growing level, Sanity, credits and Seek. The chart, timeline and diff work;
-  nothing is written to SQLite.
-- **Test operator without art** — random stats, letter fallback.
-- **Vesper** — 6★ Cryo Striker with transparent test art.
-- **Reset** — clears test data and returns real snapshots.
+**Does it work offline?**
+Yes for viewing, filters, charts and diff. Internet is needed only to take a
+new snapshot.
 
-## Security and privacy
+**Is it safe to enter the key?**
+The key is stored locally in `.secrets/`, is not logged and is not sent by the
+app. Only `snapshot.py` uses it for the Skport API call.
 
-- The Skport token is read from `.secrets/endfield_token` or `.txt`.
-- `.secrets/`, `data/aef.db`, `data/snapshots/` are gitignored.
-- The app has no telemetry and no auto-update.
-- Only the official Skport API is contacted, only when you request a snapshot.
-- The token grants full access to the account: never share it, never send it to
-  third-party sites.
+**Why are operator arts missing?**
+Official art is copyrighted and large. It is not part of the main app package;
+the art pack is installed separately.
 
-## Roadmap
+**Will old snapshots keep working?**
+Not guaranteed. The format may change; back up `data/` before upgrading.
 
-- Community terminology pass for the English draft and more languages.
-- Keyboard focus ring and 125/150/200 % DPI pass.
-- Vector element/class icons instead of text codes.
-- Optional light “paper” theme as a second complete token set.
-- Export snapshot to CSV/JSON.
-- More chart metrics (credits, Seek, domains).
+**Why isn't the translation perfect?**
+The translation is a draft. API strings (achievements, weapons, regions) are
+shown as-is; they will be translated in the future.
 
 ## License
 
-Code: MIT — see [LICENSE](LICENSE).
-Fonts: SIL Open Font License — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
-Arknights: Endfield names and trademarks belong to HYPERGRYPH / GRYPHLINE.
-
+MIT. Arknights: Endfield, its names, characters and art belong to
+HYPERGRYPH / GRYPHLINE. This is an unofficial project.

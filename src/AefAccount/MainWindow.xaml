@@ -18,6 +18,126 @@
                             CornerRadius="0" UseAeroCaptionButtons="False"/>
     </shell:WindowChrome.WindowChrome>
 
+    <Window.Resources>
+        <!-- Endfield-style surfaces and pill controls (design-references/новое). -->
+        <Style x:Key="Token.Surface" TargetType="Border">
+            <Setter Property="Background" Value="#F01B1B1B"/>
+            <Setter Property="BorderBrush" Value="#59FFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="10"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect BlurRadius="28" ShadowDepth="8" Opacity="0.55" Color="#000000"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Token.DialogButton" TargetType="Button">
+            <Setter Property="Width" Value="230"/>
+            <Setter Property="Height" Value="46"/>
+            <Setter Property="Background" Value="#343434"/>
+            <Setter Property="BorderBrush" Value="#808080"/>
+            <Setter Property="BorderThickness" Value="2"/>
+            <Setter Property="Foreground" Value="#FFFFFF"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="17"/>
+            <Setter Property="FontWeight" Value="Normal"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Root" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="23" SnapsToDevicePixels="True">
+                            <Grid>
+                                <!-- inset 0 1px 2px rgba(255,255,255,.1) -->
+                                <Border Margin="2" CornerRadius="21" IsHitTestVisible="False">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                            <GradientStop Color="#1AFFFFFF" Offset="0"/>
+                                            <GradientStop Color="#00FFFFFF" Offset="0.45"/>
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                </Border>
+                                <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#404040"/>
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#999999"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Root" Property="Background" Value="#2E2E2E"/>
+                                <Setter TargetName="Root" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <TranslateTransform Y="1"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#B0B0B0"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="Token.LinkRow" TargetType="Border">
+            <Setter Property="Height" Value="64"/>
+            <Setter Property="Background" Value="#232323"/>
+            <Setter Property="BorderBrush" Value="#4DFFFFFF"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+        </Style>
+
+        <Style x:Key="Token.Password" TargetType="PasswordBox">
+            <Setter Property="Height" Value="48"/>
+            <Setter Property="Background" Value="#0C0C0C"/>
+            <Setter Property="Foreground" Value="#F2F2F2"/>
+            <Setter Property="BorderBrush" Value="#3A3A3A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CaretBrush" Value="{DynamicResource Brush.Accent}"/>
+            <Setter Property="FontFamily" Value="{StaticResource Font.Mono}"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="14,0"/>
+            <Setter Property="PasswordChar" Value="*"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="Root" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="2" SnapsToDevicePixels="True">
+                            <ScrollViewer x:Name="PART_ContentHost"
+                                          Margin="{TemplateBinding Padding}"
+                                          VerticalAlignment="Center"
+                                          Focusable="False"
+                                          HorizontalScrollBarVisibility="Hidden"
+                                          VerticalScrollBarVisibility="Hidden"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="{DynamicResource Brush.Line.Strong}"/>
+                            </Trigger>
+                            <Trigger Property="IsKeyboardFocused" Value="True">
+                                <Setter TargetName="Root" Property="BorderBrush" Value="#F2F2F2"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Root" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
     <Grid ClipToBounds="True">
         <Grid.RowDefinitions>
             <RowDefinition Height="32"/>
@@ -118,6 +238,15 @@
                                     <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="14"
                                                VerticalAlignment="Center"/>
                                     <TextBlock Text="{loc:Loc sidebar_site}" FontSize="12" Margin="10,0,0,0"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Style="{StaticResource QuietButton}" HorizontalContentAlignment="Left"
+                                    Click="OpenRepository_Click" Padding="8,0" Margin="0,2,0,0">
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="&#xE943;" FontFamily="Segoe MDL2 Assets" FontSize="14"
+                                               VerticalAlignment="Center"/>
+                                    <TextBlock Text="{loc:Loc sidebar_repository}" FontSize="12" Margin="10,0,0,0"
                                                VerticalAlignment="Center"/>
                                 </StackPanel>
                             </Button>
@@ -327,9 +456,166 @@
                     </TextBlock>
                 </Grid>
             </Grid>
+
+            <!-- Access key overlay -->
+            <Grid x:Name="TokenOverlay" Grid.ColumnSpan="2" Panel.ZIndex="200"
+                  Visibility="Collapsed" FocusManager.IsFocusScope="True"
+                  KeyboardNavigation.TabNavigation="Cycle">
+                <Border Background="#D9000000"/>
+                <Rectangle Fill="{DynamicResource Tex.Hatch}" IsHitTestVisible="False"/>
+
+                <Border Style="{StaticResource Token.Surface}" Width="720"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid>
+                        <Rectangle Fill="{DynamicResource Tex.Hatch}" IsHitTestVisible="False"/>
+
+                        <StackPanel Margin="40,32,40,30">
+                            <StackPanel Orientation="Horizontal">
+                                <Rectangle Width="3" Height="14" Fill="{DynamicResource Brush.Accent}"
+                                           Margin="0,0,10,0"/>
+                                <TextBlock Text="{loc:Loc token_kicker}" Style="{StaticResource Text.Kicker}"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock Text="{loc:Loc token_title}" Style="{StaticResource Text.H1}"
+                                       FontSize="28" Margin="0,10,0,0"/>
+                            <TextBlock Text="{loc:Loc token_subtitle}" Style="{StaticResource Text.Meta}"
+                                       FontSize="12" Margin="0,8,0,0" TextWrapping="Wrap"/>
+
+                            <Border Background="#12FFFA00" BorderBrush="#55FFFA00"
+                                    BorderThickness="1" Padding="14,10" Margin="0,18,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="&#xE7BA;" FontFamily="Segoe MDL2 Assets" FontSize="15"
+                                               Foreground="{DynamicResource Brush.Accent}"
+                                               VerticalAlignment="Top" Margin="0,1,0,0"/>
+                                    <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                        <TextBlock Text="{loc:Loc token_security_title}" FontSize="12"
+                                                   FontWeight="SemiBold"/>
+                                        <TextBlock Text="{loc:Loc token_security_text}"
+                                                   Style="{StaticResource Text.Meta}" FontSize="11"
+                                                   TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <TextBlock Text="{loc:Loc token_label}" Style="{StaticResource Text.Kicker}"
+                                       Margin="0,22,0,8"/>
+                            <PasswordBox x:Name="TokenInput" Style="{StaticResource Token.Password}"
+                                         PasswordChanged="TokenInput_PasswordChanged"
+                                         KeyDown="TokenInput_KeyDown"/>
+                            <TextBlock x:Name="TokenError" Foreground="{DynamicResource Brush.Bad}"
+                                       FontSize="11" Margin="0,6,0,0" Visibility="Collapsed"
+                                       TextWrapping="Wrap"/>
+
+                            <Border Style="{StaticResource Token.LinkRow}" Margin="0,18,0,0">
+                                <Grid Margin="22,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{loc:Loc token_link_account}" Style="{StaticResource Text.Body}"
+                                               FontSize="12.5" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Style="{StaticResource Token.DialogButton}"
+                                            VerticalAlignment="Center" Click="OpenSkport_Click">
+                                        <Grid>
+                                            <TextBlock Text="{loc:Loc action_go}" HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" Margin="0,0,20,0"/>
+                                            <Border Width="30" Height="30" CornerRadius="15" Background="#FFFFFF"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                    Margin="0,0,7,0">
+                                                <Viewbox Width="14" Height="14">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M9,6 L15,12 L9,18" Stroke="#343434"
+                                                              StrokeThickness="3.5" StrokeStartLineCap="Round"
+                                                              StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <Border Style="{StaticResource Token.LinkRow}" Margin="0,8,0,0">
+                                <Grid Margin="22,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{loc:Loc token_link_token}" Style="{StaticResource Text.Body}"
+                                               FontSize="12.5" VerticalAlignment="Center"/>
+                                    <Button Grid.Column="1" Style="{StaticResource Token.DialogButton}"
+                                            VerticalAlignment="Center" Click="OpenTokenPage_Click">
+                                        <Grid>
+                                            <TextBlock Text="{loc:Loc action_go}" HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" Margin="0,0,20,0"/>
+                                            <Border Width="30" Height="30" CornerRadius="15" Background="#FFFFFF"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                    Margin="0,0,7,0">
+                                                <Viewbox Width="14" Height="14">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M9,6 L15,12 L9,18" Stroke="#343434"
+                                                              StrokeThickness="3.5" StrokeStartLineCap="Round"
+                                                              StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </Grid>
+                            </Border>
+
+                            <StackPanel Margin="0,26,0,0" HorizontalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <Button Style="{StaticResource Token.DialogButton}" Click="TokenExit_Click">
+                                        <Grid>
+                                            <TextBlock Text="{loc:Loc token_exit}" HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" Margin="0,0,20,0"/>
+                                            <Border Width="30" Height="30" CornerRadius="15" Background="#FFFFFF"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                    Margin="0,0,7,0">
+                                                <Viewbox Width="14" Height="14">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M6,6 L18,18 M18,6 L6,18" Stroke="#343434"
+                                                              StrokeThickness="3.5" StrokeStartLineCap="Round"
+                                                              StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+
+                                    <Button Style="{StaticResource Token.DialogButton}" Margin="25,0,0,0"
+                                            Click="TokenSave_Click">
+                                        <Grid>
+                                            <TextBlock Text="{loc:Loc token_save}" HorizontalAlignment="Center"
+                                                       VerticalAlignment="Center" Margin="0,0,20,0"/>
+                                            <Border Width="30" Height="30" CornerRadius="15" Background="#FFFFFF"
+                                                    HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                    Margin="0,0,7,0">
+                                                <Viewbox Width="14" Height="14">
+                                                    <Canvas Width="24" Height="24">
+                                                        <Path Data="M4,12 L10,18 L20,6" Stroke="#343434"
+                                                              StrokeThickness="3.5" StrokeStartLineCap="Round"
+                                                              StrokeEndLineCap="Round" StrokeLineJoin="Round"/>
+                                                    </Canvas>
+                                                </Viewbox>
+                                            </Border>
+                                        </Grid>
+                                    </Button>
+                                </StackPanel>
+
+                                <TextBlock Text="{loc:Loc token_local_hint}" Style="{StaticResource Text.MonoSmall}"
+                                           FontSize="9" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+            </Grid>
         </Grid>
     </Grid>
 </Window>
-
-
 
