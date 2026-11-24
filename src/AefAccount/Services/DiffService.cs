@@ -1,4 +1,4 @@
-using System.Globalization;
+using AefAccount.Localization;
 using AefAccount.Models;
 
 namespace AefAccount.Services;
@@ -8,20 +8,20 @@ public static class DiffService
     public static DiffModel Compute(SnapshotData previous, SnapshotData current)
     {
         var groups = new List<DiffGroup>();
-        Add(groups, "Новые операторы", AddedOperators(previous, current));
-        Add(groups, "Пропали из ответа", RemovedOperators(previous, current));
-        Add(groups, "Потенциалы", PotentialChanges(previous, current));
-        Add(groups, "Уровни", LevelChanges(previous, current));
-        Add(groups, "Пробуждение", EvolveChanges(previous, current));
-        Add(groups, "Оружие", WeaponChanges(previous, current));
-        Add(groups, "Скиллы", SkillChanges(previous, current));
-        Add(groups, "Таланты", TalentChanges(previous, current));
-        Add(groups, "Гир", GearChanges(previous, current));
-        Add(groups, "Достижения", AchievementChanges(previous, current));
-        Add(groups, "Ресурсы и прогресс", CounterChanges(previous, current));
-        Add(groups, "Домены", DomainChanges(previous, current));
-        Add(groups, "Поселения", SettlementChanges(previous, current));
-        Add(groups, "Коллекции", CollectionChanges(previous, current));
+        Add(groups, L.T("diff_group_new_operators"), AddedOperators(previous, current));
+        Add(groups, L.T("diff_group_removed_operators"), RemovedOperators(previous, current));
+        Add(groups, L.T("diff_group_potentials"), PotentialChanges(previous, current));
+        Add(groups, L.T("diff_group_levels"), LevelChanges(previous, current));
+        Add(groups, L.T("diff_group_evolve"), EvolveChanges(previous, current));
+        Add(groups, L.T("diff_group_weapons"), WeaponChanges(previous, current));
+        Add(groups, L.T("diff_group_skills"), SkillChanges(previous, current));
+        Add(groups, L.T("diff_group_talents"), TalentChanges(previous, current));
+        Add(groups, L.T("diff_group_gear"), GearChanges(previous, current));
+        Add(groups, L.T("diff_group_achievements"), AchievementChanges(previous, current));
+        Add(groups, L.T("diff_group_resources"), CounterChanges(previous, current));
+        Add(groups, L.T("diff_group_domains"), DomainChanges(previous, current));
+        Add(groups, L.T("diff_group_settlements"), SettlementChanges(previous, current));
+        Add(groups, L.T("diff_group_collections"), CollectionChanges(previous, current));
         return new DiffModel { Groups = groups };
     }
 
@@ -83,7 +83,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newOperator.Name}: ур.{oldOperator.Level?.ToString() ?? "—"} → {newOperator.Level?.ToString() ?? "—"}",
+                    Text = $"{newOperator.Name}: {L.T("level_short")}{oldOperator.Level?.ToString() ?? "—"} → {newOperator.Level?.ToString() ?? "—"}",
                 });
             }
         }
@@ -127,7 +127,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newOperator.Name}: сфера оружия {oldOperator.WeaponGem ?? "—"} → {newOperator.WeaponGem ?? "—"}",
+                    Text = $"{newOperator.Name}: {L.T("diff_weapon_gem", oldOperator.WeaponGem ?? "—", newOperator.WeaponGem ?? "—")}",
                 });
             }
         }
@@ -150,7 +150,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newOperator.Name}: {name} ур.{oldSkill?.Level?.ToString() ?? "—"} → {newSkill?.Level?.ToString() ?? "—"}",
+                    Text = $"{newOperator.Name}: {name} {L.T("level_short")}{oldSkill?.Level?.ToString() ?? "—"} → {newSkill?.Level?.ToString() ?? "—"}",
                 });
             }
         }
@@ -167,7 +167,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newOperator.Name}: прорыв {oldOperator.Talents.BreakLabel} → {newOperator.Talents.BreakLabel}",
+                    Text = $"{newOperator.Name}: {L.T("diff_breakthrough", oldOperator.Talents.BreakLabel, newOperator.Talents.BreakLabel)}",
                 });
             }
             if (oldOperator.Talents.PassiveCount != newOperator.Talents.PassiveCount)
@@ -175,7 +175,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newOperator.Name}: пассивные {oldOperator.Talents.PassiveCount} → {newOperator.Talents.PassiveCount}",
+                    Text = $"{newOperator.Name}: {L.T("diff_passive", oldOperator.Talents.PassiveCount, newOperator.Talents.PassiveCount)}",
                 });
             }
             if (oldOperator.Talents.FactoryCount != newOperator.Talents.FactoryCount)
@@ -183,7 +183,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newOperator.Name}: фабрика {oldOperator.Talents.FactoryCount} → {newOperator.Talents.FactoryCount}",
+                    Text = $"{newOperator.Name}: {L.T("diff_factory", oldOperator.Talents.FactoryCount, newOperator.Talents.FactoryCount)}",
                 });
             }
             if (oldOperator.Talents.ShipCount != newOperator.Talents.ShipCount)
@@ -191,7 +191,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newOperator.Name}: корабль {oldOperator.Talents.ShipCount} → {newOperator.Talents.ShipCount}",
+                    Text = $"{newOperator.Name}: {L.T("diff_ship", oldOperator.Talents.ShipCount, newOperator.Talents.ShipCount)}",
                 });
             }
         }
@@ -215,7 +215,7 @@ public static class DiffService
             }
             else if (oldItem != null && newItem == null)
             {
-                result.Add(new DiffLine { Kind = DiffKind.Down, Text = $"{label} — было {oldItem.Display}" });
+                result.Add(new DiffLine { Kind = DiffKind.Down, Text = $"{label} — {L.T("diff_was", oldItem.Display)}" });
             }
             else if (oldItem != null && newItem != null && oldItem.Display != newItem.Display)
             {
@@ -247,14 +247,14 @@ public static class DiffService
             if (!newAchievements.TryGetValue(id, out var newItem)) continue;
             if (!oldItem.IsPlated && newItem.IsPlated)
             {
-                result.Add(new DiffLine { Kind = DiffKind.Up, Text = $"плашка: {newItem.Name}" });
+                result.Add(new DiffLine { Kind = DiffKind.Up, Text = L.T("diff_plated", newItem.Name) });
             }
             if (oldItem.Level != newItem.Level)
             {
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newItem.Name}: ур.{oldItem.Level?.ToString() ?? "—"} → {newItem.Level?.ToString() ?? "—"}",
+                    Text = $"{newItem.Name}: {L.T("level_short")}{oldItem.Level?.ToString() ?? "—"} → {newItem.Level?.ToString() ?? "—"}",
                 });
             }
         }
@@ -277,7 +277,7 @@ public static class DiffService
             result.Add(new DiffLine
             {
                 Kind = delta is null or 0 ? DiffKind.Neutral : delta > 0 ? DiffKind.Up : DiffKind.Down,
-                Text = $"{newItem.Label ?? key}: {oldItem.Display} → {newItem.Display}{deltaText}",
+                Text = $"{newItem.DisplayLabel}: {oldItem.Display} → {newItem.Display}{deltaText}",
             });
         }
         return result;
@@ -294,7 +294,7 @@ public static class DiffService
             newDomains.TryGetValue(id, out var newDomain);
             if (oldDomain == null && newDomain != null)
             {
-                result.Add(new DiffLine { Kind = DiffKind.Up, Text = $"+ {newDomain.DisplayName} (ур.{newDomain.Level?.ToString() ?? "—"})" });
+                result.Add(new DiffLine { Kind = DiffKind.Up, Text = $"+ {newDomain.DisplayName} ({L.T("level_short")}{newDomain.Level?.ToString() ?? "—"})" });
             }
             else if (oldDomain != null && newDomain == null)
             {
@@ -305,7 +305,7 @@ public static class DiffService
                 result.Add(new DiffLine
                 {
                     Kind = DiffKind.Up,
-                    Text = $"{newDomain.DisplayName}: ур.{oldDomain.Level?.ToString() ?? "—"} → {newDomain.Level?.ToString() ?? "—"}",
+                    Text = $"{newDomain.DisplayName}: {L.T("level_short")}{oldDomain.Level?.ToString() ?? "—"} → {newDomain.Level?.ToString() ?? "—"}",
                 });
             }
         }
@@ -326,7 +326,7 @@ public static class DiffService
             var name = newItem?.DisplayName ?? oldItem?.DisplayName ?? key;
             if (oldItem == null && newItem != null)
             {
-                result.Add(new DiffLine { Kind = DiffKind.Up, Text = $"+ {name} (ур.{newItem.Level?.ToString() ?? "—"})" });
+                result.Add(new DiffLine { Kind = DiffKind.Up, Text = $"+ {name} ({L.T("level_short")}{newItem.Level?.ToString() ?? "—"})" });
             }
             else if (oldItem != null && newItem == null)
             {
@@ -335,8 +335,8 @@ public static class DiffService
             else if (oldItem != null && newItem != null)
             {
                 var changes = new List<string>();
-                if (oldItem.Level != newItem.Level) changes.Add($"ур.{oldItem.Level?.ToString() ?? "—"} → {newItem.Level?.ToString() ?? "—"}");
-                if (oldItem.Money != newItem.Money) changes.Add($"деньги {Format(oldItem.Money)} → {Format(newItem.Money)}");
+                if (oldItem.Level != newItem.Level) changes.Add($"{L.T("level_short")}{oldItem.Level?.ToString() ?? "—"} → {newItem.Level?.ToString() ?? "—"}");
+                if (oldItem.Money != newItem.Money) changes.Add(L.T("diff_money", Format(oldItem.Money), Format(newItem.Money)));
                 if (changes.Count > 0) result.Add(new DiffLine { Kind = DiffKind.Up, Text = $"{name}: {string.Join(", ", changes)}" });
             }
         }
@@ -369,7 +369,7 @@ public static class DiffService
             {
                 var newMetric = newItem.Metrics.FirstOrDefault(item => item.Key == oldMetric.Key);
                 if (newMetric is null || oldMetric.Count == newMetric.Count) continue;
-                changes.Add($"{oldMetric.Label} {oldMetric.Count} → {newMetric.Count}");
+                changes.Add($"{oldMetric.DisplayLabel} {oldMetric.Count} → {newMetric.Count}");
             }
             if (changes.Count > 0) result.Add(new DiffLine { Kind = DiffKind.Up, Text = $"{newItem.DisplayName}: {string.Join(", ", changes)}" });
         }
@@ -395,19 +395,19 @@ public static class DiffService
     private static string WeaponDescription(OperatorModel op) =>
         op.WeaponName == null
             ? "—"
-            : $"{op.WeaponName} R{op.WeaponRefine ?? 0} ур.{op.WeaponLevel ?? 0} B{op.WeaponBreakthrough ?? 0}";
+            : $"{op.WeaponName} R{op.WeaponRefine ?? 0} {L.T("level_short")}{op.WeaponLevel ?? 0} B{op.WeaponBreakthrough ?? 0}";
 
     private static string OperatorDescription(OperatorModel op) =>
-        $"{op.Rarity ?? 0}★ {op.Element ?? "—"} {op.Class ?? "—"}, P{op.Potential}, ур.{op.Level?.ToString() ?? "—"}, E{op.Evolve ?? 0}";
+        $"{op.Rarity ?? 0}★ {op.Element ?? "—"} {op.Class ?? "—"}, P{op.Potential}, {L.T("level_short")}{op.Level?.ToString() ?? "—"}, E{op.Evolve ?? 0}";
 
     private static string Format(double? value)
     {
         if (value is null) return "—";
         return value.Value == Math.Truncate(value.Value)
-            ? value.Value.ToString("N0", AppCulture.Ru)
-            : value.Value.ToString("N1", AppCulture.Ru);
+            ? value.Value.ToString("N0", AppCulture.Current)
+            : value.Value.ToString("N1", AppCulture.Current);
     }
 
     private static string Format(long? value) =>
-        value?.ToString("N0", AppCulture.Ru) ?? "—";
+        value?.ToString("N0", AppCulture.Current) ?? "—";
 }

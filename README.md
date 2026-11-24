@@ -27,8 +27,8 @@ them in a dense “engineering terminal” UI:
   Echoes, Indie groups, inventory.
 - **Achievements** — search, categories, plated badges.
 - **Snapshots** — dense archive table, Markdown report, raw JSON.
-- **Settings** — RU/EN placeholder, test operators, in-memory DEV snapshot
-  profile, test-data reset.
+- **Settings** — RU/EN interface language (auto-detected, switchable without
+  restart), test operators, in-memory DEV snapshot profile, test-data reset.
 
 ## Data flow
 
@@ -49,6 +49,8 @@ updater. Everything else is a local SQLite read.
 
 - Dark terminal visual system: `#FFFA00` accent, 0–2 px radii, Inter,
   Bahnschrift, Cascadia Mono, PT Serif document layer.
+- **RU/EN interface** with system-language auto-detection, instant switching
+  and external `lang/*.json` translation files.
 - Operator cards with `icon` / `portrait` / `full` local art support.
 - Letter fallback for operators without local art (new API characters).
 - Snapshot diff, timeline and custom line chart — no chart library.
@@ -111,12 +113,13 @@ Requires .NET 10 SDK. Python is optional for development; the UI runs without it
 src/AefAccount/          WPF application
   Assets/Fonts/          Inter + PT Serif (OFL)
   Assets/Operators/      test operator Vesper only
+  Localization/          LocalizationService + built-in ru/en JSON
   Services/              DataService, DiffService, OperatorArt, DevDataService
   Views/                 Overview, Roster, Dynamics, Progress, Achievements,
                          Snapshots, Settings, OperatorWindow
 scripts/                 snapshot.py, sync.py, aef.py
 data/                    schema.sql, seed.sql
-docs/                    release notes
+docs/                    release notes, localization guide
 ```
 
 ## Operator art
@@ -141,9 +144,11 @@ and is intended for UI testing only.
 
 ## Settings and test data
 
-- **Language** — RU is active; EN is a placeholder until the community
-  terminology glossary is parsed from the wiki.
-- **Show test operators** — toggles test cards in Roster and “Костяк”.
+- **Language** — RU/EN interface, auto-detected from Windows on first launch.
+  Switching applies instantly, without restarting the app. Translations live in
+  external `lang/*.json` files; add a new file to add a language. See
+  [docs/localization.md](docs/localization.md).
+- **Show test operators** — toggles test cards in Roster and “Core”.
 - **DEV snapshot profile** — 8 in-memory snapshots (IDs 9001–9008) with
   growing level, Sanity, credits and Seek. The chart, timeline and diff work;
   nothing is written to SQLite.
@@ -162,7 +167,7 @@ and is intended for UI testing only.
 
 ## Roadmap
 
-- Full RU/EN localization from a community glossary.
+- Community terminology pass for the English draft and more languages.
 - Keyboard focus ring and 125/150/200 % DPI pass.
 - Vector element/class icons instead of text codes.
 - Optional light “paper” theme as a second complete token set.

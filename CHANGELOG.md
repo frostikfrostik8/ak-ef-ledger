@@ -1,5 +1,32 @@
 # Changelog
 
+## v0.3.1 — localization (2026-11-24)
+
+### Added
+
+- **RU/EN interface localization** with automatic detection from the Windows UI
+  language.
+- Language switching **without restarting** the app: all views, nav labels,
+  filters, dates, numbers and diff strings update in place.
+- External translation files `lang/*.json` next to the exe, with built-in
+  RU/EN fallback inside the assembly.
+- New languages can be added by dropping another `lang/xx.json` file; the
+  language list can be reloaded from Settings without restart.
+- Draft English translation for the full interface, including the operator
+  detail window, charts, progress and snapshots.
+- `--lang=xx` command-line override for screenshots and testing.
+- Settings: “Language folder” button and a language-list reload button.
+- `docs/localization.md` — file format, auto-detection, fallback rules and a
+  step-by-step guide for adding a language.
+
+### Changed
+
+- Operator display names follow the interface language: Russian names in RU,
+  English names in EN.
+- Dates and numbers follow the selected culture (`ru-RU` / `en-US`).
+- Snapshot diff summaries from SQLite are translated for display in EN.
+- Version bumped to **0.3.1**.
+
 ## v0.3.0 — .NET 10 migration (2026-11-24)
 
 ### Changed

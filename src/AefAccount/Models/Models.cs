@@ -1,13 +1,17 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Globalization;
 using System.Text.Json;
+using AefAccount.Localization;
 using AefAccount.Services;
 
 namespace AefAccount.Models;
 
 public static class AppCulture
 {
-    public static readonly CultureInfo Ru = CultureInfo.GetCultureInfo("ru-RU");
+    public static CultureInfo Current => LocalizationService.Instance.Culture;
+    public static string DateFormat => LocalizationService.Instance.DateFormat;
+    public static string DateFormatShort => LocalizationService.Instance.DateFormatShort;
     public static readonly TimeSpan ServerOffset = TimeSpan.FromHours(8);
 }
 
@@ -41,6 +45,49 @@ public sealed class SnapshotSummary
     public int? SeekMax { get; init; }
     public int? AchieveCount { get; init; }
     public string? DiffSummary { get; init; }
+
+    public string DiffSummaryText
+    {
+        get
+        {
+            var raw = DiffSummary;
+            if (string.IsNullOrWhiteSpace(raw)) return "";
+            if (LocalizationService.Instance.CurrentLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase)) return raw;
+
+            var parts = raw.Split("; ", StringSplitOptions.RemoveEmptyEntries);
+            for (var index = 0; index < parts.Length; index++)
+            {
+                var part = parts[index];
+                var separator = part.IndexOf(" ×", StringComparison.Ordinal);
+                if (separator < 0) separator = part.IndexOf(": ", StringComparison.Ordinal);
+                var name = (separator >= 0 ? part[..separator] : part).Trim();
+                if (!DiffSummaryGroupKeys.TryGetValue(name, out var key)) continue;
+                parts[index] = L.T(key) + (separator >= 0 ? part[separator..] : "");
+            }
+            return string.Join("; ", parts);
+        }
+    }
+
+    private static readonly Dictionary<string, string> DiffSummaryGroupKeys = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ["новые операторы"] = "diff_group_new_operators",
+        ["пропали из ответа"] = "diff_group_removed_operators",
+        ["потенциалы"] = "diff_group_potentials",
+        ["уровни"] = "diff_group_levels",
+        ["пробуждение"] = "diff_group_evolve",
+        ["оружие"] = "diff_group_weapons",
+        ["скиллы"] = "diff_group_skills",
+        ["таланты"] = "diff_group_talents",
+        ["гир"] = "diff_group_gear",
+        ["достижения"] = "diff_group_achievements",
+        ["ресурсы"] = "diff_group_resources",
+        ["ресурсы и прогресс"] = "diff_group_resources",
+        ["домены"] = "diff_group_domains",
+        ["поселения"] = "diff_group_settlements",
+        ["коллекции"] = "diff_group_collections",
+        ["первый снимок"] = "diff_first_snapshot",
+        ["без изменений"] = "diff_no_changes_short",
+    };
     public string? MainMission { get; init; }
     public string? CreatedTs { get; init; }
     public string? LastLoginTs { get; init; }
@@ -51,16 +98,17 @@ public sealed class SnapshotSummary
     public string CreatedText => DateText.FromIso(CreatedTs);
     public string LastLoginText => DateText.FromIso(LastLoginTs);
 
-    public string DisplayDate => TakenAtTime?.ToString("dd MMM yyyy, HH:mm", AppCulture.Ru) ?? "—";
-    public string DisplayDateShort => TakenAtTime?.ToString("dd MMM yyyy", AppCulture.Ru) ?? "—";
+    public string DisplayDate => TakenAtTime?.ToString(AppCulture.DateFormat, AppCulture.Current) ?? "—";
+    public string DisplayDateShort => TakenAtTime?.ToString(AppCulture.DateFormatShort, AppCulture.Current) ?? "—";
     public string DisplayLabel => $"#{Id} · {DisplayDate} · v{GameVersion ?? "?"}";
-    public string DisplayLabelShort => $"#{Id} · {TakenAtTime?.ToString("dd.MM", AppCulture.Ru) ?? "—"} · v{GameVersion ?? "?"}";
+    public string DisplayLabelShort => $"#{Id} · {TakenAtTime?.ToString("dd.MM", AppCulture.Current) ?? "—"} · v{GameVersion ?? "?"}";
     public string StaminaText => Ratio(Stamina, StaminaMax);
     public string BpText => Ratio(BpLevel, BpMax);
     public string DailyText => Ratio(Daily, DailyMax);
     public string WeeklyText => Ratio(Weekly, WeeklyMax);
     public string CreditText => Ratio(Credit, CreditMax);
     public string SeekText => Ratio(Seek, SeekMax);
+    public string ExpText => Exp is null ? "—" : Exp.Value.ToString("N0", AppCulture.Current);
     public double StaminaPercent => Percent(Stamina, StaminaMax);
     public double BpPercent => Percent(BpLevel, BpMax);
     public double DailyPercent => Percent(Daily, DailyMax);
@@ -68,7 +116,9 @@ public sealed class SnapshotSummary
     public double CreditPercent => Percent(Credit, CreditMax);
     public double SeekPercent => Percent(Seek, SeekMax);
 
-    public static string Ratio(int? value, int? max) => value == null && max == null ? "—" : $"{value ?? 0} / {max ?? 0}";
+    public static string Ratio(int? value, int? max) => value == null && max == null
+        ? "—"
+        : string.Format(AppCulture.Current, "{0:N0} / {1:N0}", value ?? 0, max ?? 0);
 
     private static double Percent(int? value, int? max) =>
         max is > 0 ? Math.Clamp((value ?? 0) * 100.0 / max.Value, 0, 100) : 0;
@@ -109,7 +159,8 @@ public sealed class SnapshotData
     public DiffModel? Diff { get; init; }
     public int? PreviousId { get; init; }
     public int? NextId { get; init; }
-    public string DiffSummary => Diff?.Summary ?? Snapshot.DiffSummary ?? "первый снимок";
+    public string DiffSummary => Diff?.Summary
+        ?? (string.IsNullOrWhiteSpace(Snapshot.DiffSummaryText) ? L.T("diff_first_snapshot") : Snapshot.DiffSummaryText);
 
     public IEnumerable<CollectionModel> Collections => Domains.SelectMany(domain => domain.Collections);
     public int PlatedCount => Achievements.Count(item => item.IsPlated);
@@ -142,7 +193,9 @@ public sealed class OperatorModel
     public string? WeaponGem { get; init; }
 
     public string Initial => string.IsNullOrWhiteSpace(Name) ? "?" : Name.TrimStart('"', '“', '”').FirstOrDefault().ToString().ToUpperInvariant();
-    public string DisplayName => OperatorArt.RuName(Name);
+    public string DisplayName => LocalizationService.Instance.CurrentLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase)
+        ? OperatorArt.RuName(Name)
+        : OperatorArt.EnglishName(Name);
     public string EnglishName => OperatorArt.EnglishName(Name);
     public string? ArtSlug => OperatorArt.Slug(Name);
     public bool HasLocalArt => OperatorArt.HasLocalArt(Name);
@@ -170,29 +223,30 @@ public sealed class OperatorModel
         _ => "—",
     };
     public string Subtitle => $"{Element ?? "—"} · {Class ?? "—"}";
-    public string LevelChip => $"ур. {Level?.ToString() ?? "—"}";
-    public string WeaponText => WeaponName ?? "Без оружия";
+    public string LevelChip => L.T("level_chip", Level?.ToString() ?? "—");
+    public string WeaponText => WeaponName ?? L.T("gear_not_equipped");
+    public string WeaponNameText => WeaponName ?? L.T("gear_not_equipped");
     public string WeaponRefineText => WeaponRefine is null ? "—" : $"R{WeaponRefine}";
     public string LevelText => Level?.ToString() ?? "—";
     public string PotentialText => $"P{Potential}";
     public string EvolveText => $"E{Evolve ?? 0}";
-    public string GearCountText => $"{Gear.Count} гир";
+    public string GearCountText => L.T("gear_count", Gear.Count);
     public string AcquiredText => DateText.FromEpoch(OwnTs);
     public string WeaponSummary =>
         WeaponName == null
-            ? "Не надето"
-            : $"{WeaponType ?? "—"} · {WeaponRarity ?? 0}★ · R{WeaponRefine ?? 0} · ур. {WeaponLevel ?? 0} · B{WeaponBreakthrough ?? 0}";
+            ? L.T("gear_not_equipped")
+            : L.T("weapon_summary", WeaponType ?? "—", WeaponRarity ?? 0, WeaponRefine ?? 0, WeaponLevel ?? 0, WeaponBreakthrough ?? 0);
     public string SkillLevelsText => string.Join("  ", Skills.Select(skill => $"{skill.Level ?? 0}"));
     public bool HasSkills => Skills.Count > 0;
     public bool HasWeaponSkills => WeaponSkills.Count > 0;
     public bool HasTags => Tags.Count > 0;
     public List<GearSlotModel> GearSlots =>
     [
-        new() { Label = "Тело", Gear = Gear.GetValueOrDefault("body") },
-        new() { Label = "Руки", Gear = Gear.GetValueOrDefault("arm") },
-        new() { Label = "Аксессуар 1", Gear = Gear.GetValueOrDefault("acc1") },
-        new() { Label = "Аксессуар 2", Gear = Gear.GetValueOrDefault("acc2") },
-        new() { Label = "Тактика", Gear = Gear.GetValueOrDefault("tactical") },
+        new() { Label = L.T("gear_slot_body"), Gear = Gear.GetValueOrDefault("body") },
+        new() { Label = L.T("gear_slot_arm"), Gear = Gear.GetValueOrDefault("arm") },
+        new() { Label = L.T("gear_slot_acc1"), Gear = Gear.GetValueOrDefault("acc1") },
+        new() { Label = L.T("gear_slot_acc2"), Gear = Gear.GetValueOrDefault("acc2") },
+        new() { Label = L.T("gear_slot_tactical"), Gear = Gear.GetValueOrDefault("tactical") },
     ];
 }
 
@@ -201,8 +255,10 @@ public sealed class GearSlotModel
     public string Label { get; init; } = "";
     public GearModel? Gear { get; init; }
     public bool HasGear => Gear != null;
-    public string Name => Gear?.Name ?? "Не надето";
-    public string Meta => Gear == null ? "—" : $"{Gear.LevelText}" + (Gear.EnhanceText == "—" ? "" : $" · энч. {Gear.EnhanceText}");
+    public string Name => Gear?.Name ?? L.T("gear_not_equipped");
+    public string Meta => Gear == null
+        ? "—"
+        : Gear.LevelText + (Gear.EnhanceText == "—" ? "" : $" · {L.T("gear_enhance_short")} {Gear.EnhanceText}");
     public string Suit => Gear?.Suit ?? "";
 }
 
@@ -218,16 +274,16 @@ public sealed class GearModel
     public string? EquipId { get; init; }
     public string SlotLabel => Slot switch
     {
-        "body" => "Тело",
-        "arm" => "Руки",
-        "acc1" => "Аксессуар 1",
-        "acc2" => "Аксессуар 2",
-        "tactical" => "Тактика",
+        "body" => L.T("gear_slot_body"),
+        "arm" => L.T("gear_slot_arm"),
+        "acc1" => L.T("gear_slot_acc1"),
+        "acc2" => L.T("gear_slot_acc2"),
+        "tactical" => L.T("gear_slot_tactical"),
         _ => Slot,
     };
     public string EnhanceText => FormatEnhance(Enhance);
-    public string LevelText => Level is null ? "—" : $"ур. {Level}";
-    public string Display => $"{Name ?? "—"} · ур. {Level?.ToString() ?? "—"}" + (EnhanceText == "—" ? "" : $" · энч. {EnhanceText}");
+    public string LevelText => Level is null ? "—" : L.T("level_chip", Level);
+    public string Display => $"{Name ?? "—"} · {LevelText}" + (EnhanceText == "—" ? "" : $" · {L.T("gear_enhance_short")} {EnhanceText}");
 
     public static string FormatEnhance(string? value)
     {
@@ -286,9 +342,9 @@ public sealed class TalentModel
     public int FactoryCount { get; init; }
     public int ShipCount { get; init; }
     public string BreakLabel => string.IsNullOrWhiteSpace(BreakNode) ? "—" : BreakNode.Replace("charBreak", "");
-    public string PassiveText => $"{PassiveCount} узла";
-    public string FactoryText => $"{FactoryCount} узла";
-    public string ShipText => $"{ShipCount} узла";
+    public string PassiveText => L.T("talent_nodes", PassiveCount);
+    public string FactoryText => L.T("talent_nodes", FactoryCount);
+    public string ShipText => L.T("talent_nodes", ShipCount);
 }
 
 public sealed class AchievementModel
@@ -303,7 +359,7 @@ public sealed class AchievementModel
     public string? ObtainedTs { get; init; }
     public string Initial => string.IsNullOrWhiteSpace(Name) ? "?" : Name.TrimStart('"', '“', '”').FirstOrDefault().ToString().ToUpperInvariant();
     public string ObtainedText => DateText.FromEpoch(ObtainedTs);
-    public string LevelText => $"ур. {Level?.ToString() ?? "—"}";
+    public string LevelText => L.T("level_chip", Level?.ToString() ?? "—");
     public string CategoryText => Category ?? "—";
 }
 
@@ -317,7 +373,7 @@ public sealed class DomainModel
     public List<SettlementModel> Settlements { get; init; } = [];
     public List<CollectionModel> Collections { get; init; } = [];
     public string DisplayName => Name ?? Id;
-    public string MoneyText => $"{MoneyCount ?? 0:N0} / {MoneyTotal ?? 0:N0}".Replace(",", " ");
+    public string MoneyText => string.Format(AppCulture.Current, "{0:N0} / {1:N0}", MoneyCount ?? 0, MoneyTotal ?? 0);
     public double OverallPercent
     {
         get
@@ -337,7 +393,7 @@ public sealed class SettlementModel
     public int? Level { get; init; }
     public long? Money { get; init; }
     public string DisplayName => Name ?? Id;
-    public string LevelText => $"ур. {Level?.ToString() ?? "—"}";
+    public string LevelText => L.T("level_chip", Level?.ToString() ?? "—");
 }
 
 public sealed class CollectionModel
@@ -374,7 +430,16 @@ public sealed class MetricModel
     public int Count { get; init; }
     public int Total { get; init; }
     public double Percent => Total > 0 ? Math.Clamp(Count * 100.0 / Total, 0, 100) : 0;
-    public string Display => $"{Count:N0}/{Total:N0}".Replace(",", " ");
+    public string Display => string.Format(AppCulture.Current, "{0:N0}/{1:N0}", Count, Total);
+    public string DisplayLabel => Key switch
+    {
+        "chest" or "chests" => L.T("metric_chests"),
+        "puzzle" or "heads" => L.T("metric_puzzles"),
+        "blackbox" or "boxes" => L.T("metric_blackboxes"),
+        "piece" => L.T("metric_pieces"),
+        "equip_chest" => L.T("metric_equip_chests"),
+        _ => Label,
+    };
 }
 
 public sealed class ShipRoomModel
@@ -383,10 +448,10 @@ public sealed class ShipRoomModel
     public int? Type { get; init; }
     public int? Level { get; init; }
     public List<ShipCharacterModel> Characters { get; init; } = [];
-    public string Title => $"Комната {Index + 1}";
-    public string TypeText => $"тип {Type?.ToString() ?? "—"}";
-    public string CharactersText => $"{Characters.Count} операторов";
-    public string FavorabilityText => $"{Characters.Count(item => item.Favorability >= 1500)} на 1500";
+    public string Title => L.T("ship_room", Index + 1);
+    public string TypeText => L.T("ship_room_type", Type?.ToString() ?? "—");
+    public string CharactersText => L.T("ship_room_characters", Characters.Count);
+    public string FavorabilityText => L.T("ship_favorability", Characters.Count(item => item.Favorability >= 1500));
 }
 
 public sealed class ShipCharacterModel
@@ -403,8 +468,21 @@ public sealed class CounterModel
     public double? ValueNum { get; init; }
     public string? ValueText { get; init; }
     public string Display => ValueNum is not null
-        ? (ValueNum.Value == Math.Truncate(ValueNum.Value) ? ValueNum.Value.ToString("N0", AppCulture.Ru) : ValueNum.Value.ToString("N1", AppCulture.Ru))
+        ? (ValueNum.Value == Math.Truncate(ValueNum.Value)
+            ? ValueNum.Value.ToString("N0", AppCulture.Current)
+            : ValueNum.Value.ToString("N1", AppCulture.Current))
         : ValueText ?? "—";
+    public string DisplayLabel => Key switch
+    {
+        "stamina.current" => L.T("resource_sanity"),
+        "stamina.max" => L.T("counter_sanity_max"),
+        "credit.current" => L.T("resource_credits"),
+        "seek.current" => L.T("resource_seek"),
+        "bp.current" => L.T("counter_bp"),
+        "daily.current" => L.T("counter_daily"),
+        "weekly.current" => L.T("counter_weekly"),
+        _ => Label ?? Key,
+    };
 }
 
 public sealed class ExtrasModel
@@ -421,7 +499,7 @@ public sealed class AttendanceModel
     public int Signed { get; init; }
     public int Total { get; init; }
     public bool HasToday { get; init; }
-    public string Display => $"{Signed}/{Total} дней" + (HasToday ? " · сегодня есть" : "");
+    public string Display => L.T("attendance_days", Signed, Total) + (HasToday ? L.T("attendance_today") : "");
     public double Percent => Total > 0 ? Math.Clamp(Signed * 100.0 / Total, 0, 100) : 0;
 }
 
@@ -470,7 +548,7 @@ public sealed class WarSeasonModel
     public string? EndTs { get; init; }
     public List<WarWeekModel> Weeks { get; init; } = [];
     public string EndText => DateText.FromEpoch(EndTs);
-    public string CycleText => Weeks.FirstOrDefault()?.Name ?? "сезон";
+    public string CycleText => Weeks.FirstOrDefault()?.Name ?? L.T("season");
     public double StarsPercent => Math.Clamp((Stars ?? 0) * 100.0 / 9, 0, 100);
 }
 
@@ -512,7 +590,7 @@ public sealed class DiffModel
     {
         get
         {
-            if (Groups.Count == 0) return "без изменений";
+            if (Groups.Count == 0) return L.T("diff_no_changes_short");
             var parts = new List<string>();
             foreach (var group in Groups.Where(group => group.Lines.Count > 0).Take(5))
             {
@@ -524,7 +602,7 @@ public sealed class DiffModel
     public string Compact(int limit = 7)
     {
         var lines = AllLines;
-        return lines.Count == 0 ? "Изменений нет." : string.Join("\n", lines.Take(limit).Select(line => line.Text));
+        return lines.Count == 0 ? L.T("diff_no_changes") : string.Join("\n", lines.Take(limit).Select(line => line.Text));
     }
 }
 
@@ -544,18 +622,35 @@ public sealed class ChartModel
     public string DeltaText { get; init; } = "";
 }
 
-public sealed class MetricOption
+public sealed class MetricOption : INotifyPropertyChanged
 {
     public string Key { get; init; } = "";
-    public string Label { get; init; } = "";
+    public string LabelKey { get; init; } = "";
+    public string Label => L.T(LabelKey);
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public void Refresh() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
 }
 
-public sealed class NavItem
+public sealed class NavItem : INotifyPropertyChanged
 {
     public string Key { get; init; } = "";
-    public string Label { get; init; } = "";
+    public string LabelKey { get; init; } = "";
+    public string Label => L.T(LabelKey);
     public string Icon { get; init; } = "";
     public string Eyebrow { get; init; } = "";
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public void Refresh() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
+}
+
+/// <summary>Значение фильтра/сортировки: ключ остаётся стабильным, подпись переводится.</summary>
+public sealed class LocalizedOption : INotifyPropertyChanged
+{
+    public string Key { get; init; } = "";
+    public string? LabelKey { get; init; }
+    public string? Fallback { get; init; }
+    public string Label => LabelKey is null ? Fallback ?? Key : L.T(LabelKey);
+    public event PropertyChangedEventHandler? PropertyChanged;
+    public void Refresh() => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Label)));
 }
 
 public static class DateText
@@ -565,19 +660,19 @@ public static class DateText
         if (!long.TryParse(value, out var seconds) || seconds <= 0) return "—";
         return DateTimeOffset.FromUnixTimeSeconds(seconds)
             .ToOffset(AppCulture.ServerOffset)
-            .ToString("dd MMM yyyy, HH:mm", AppCulture.Ru);
+            .ToString(AppCulture.DateFormat, AppCulture.Current);
     }
 
     public static string FromIso(string? value)
     {
         if (!DateTimeOffset.TryParse(value, out var date)) return "—";
-        return date.ToOffset(AppCulture.ServerOffset).ToString("dd MMM yyyy, HH:mm", AppCulture.Ru);
+        return date.ToOffset(AppCulture.ServerOffset).ToString(AppCulture.DateFormat, AppCulture.Current);
     }
 
     public static string FromIsoShort(string? value)
     {
         if (!DateTimeOffset.TryParse(value, out var date)) return "—";
-        return date.ToOffset(AppCulture.ServerOffset).ToString("dd MMM yyyy", AppCulture.Ru);
+        return date.ToOffset(AppCulture.ServerOffset).ToString(AppCulture.DateFormatShort, AppCulture.Current);
     }
 }
 

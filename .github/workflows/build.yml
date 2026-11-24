@@ -35,6 +35,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: AK-EF-Ledger-win-x64
-          path: out/AkEfLedger.exe
+          path: |
+            out/AkEfLedger.exe
+            out/lang/**
           if-no-files-found: error
 

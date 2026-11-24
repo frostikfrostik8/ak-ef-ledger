@@ -1,8 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using AefAccount.Localization;
 using AefAccount.Models;
 using AefAccount.Services;
 
@@ -10,6 +10,8 @@ namespace AefAccount.ViewModels;
 
 public sealed class MainViewModel : INotifyPropertyChanged
 {
+    private const string FilterAllKey = "all";
+
     private readonly DataService _dataService;
     private readonly UpdateService _updateService;
     private SnapshotMeta? _meta;
@@ -24,18 +26,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _busyText = "";
     private string _statusMessage = "";
     private bool _statusIsError;
-    private string _pageTitle = "Обзор";
+    private string _pageTitle = "";
     private string _pageEyebrow = "// OVERVIEW";
-    private string _freshnessText = "нет снимков";
+    private string _currentPageKey = "overview";
+    private string _freshnessText = "";
     private string _freshnessState = "Bad";
     private string _rosterSearch = "";
-    private string _selectedRarity = "Все";
-    private string _selectedElement = "Все";
-    private string _selectedClass = "Все";
-    private string _selectedSort = "Редкость";
+    private LocalizedOption? _selectedRarity;
+    private LocalizedOption? _selectedElement;
+    private LocalizedOption? _selectedClass;
+    private LocalizedOption? _selectedSort;
     private string _rosterCountText = "";
     private string _achievementSearch = "";
-    private string _selectedAchievementCategory = "Все";
+    private LocalizedOption? _selectedAchievementCategory;
     private MetricOption? _selectedMetric;
     private ChartModel? _chart;
     private SnapshotSummary? _compareA;
@@ -47,37 +50,67 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private DevProfile? _devProfile;
     private bool _showTestOperators;
     private bool _useDevProfile;
-    private string _selectedLanguage = "RU";
-    private string _settingsStatus = "Тестовые данные выключены.";
+    private LanguageOption? _selectedLanguage;
+    private string _settingsStatus = "";
     private int _testOperatorSeq;
 
     public MainViewModel()
     {
         _dataService = new DataService();
         _updateService = new UpdateService(_dataService.RepoRoot, _dataService.DbPath);
+
+        var localization = LocalizationService.Instance;
+        localization.LanguageChanged += OnLanguageChanged;
+        localization.LanguagesChanged += OnLanguagesChanged;
+
+        RarityOptions.Add(new LocalizedOption { Key = FilterAllKey, LabelKey = "filter_all" });
+        RarityOptions.Add(new LocalizedOption { Key = "6", Fallback = "6★" });
+        RarityOptions.Add(new LocalizedOption { Key = "5", Fallback = "5★" });
+        RarityOptions.Add(new LocalizedOption { Key = "4", Fallback = "4★" });
+        ElementOptions.Add(new LocalizedOption { Key = FilterAllKey, LabelKey = "filter_all" });
+        ClassOptions.Add(new LocalizedOption { Key = FilterAllKey, LabelKey = "filter_all" });
+        AchievementCategories.Add(new LocalizedOption { Key = FilterAllKey, LabelKey = "filter_all" });
+        SortOptions.Add(new LocalizedOption { Key = "rarity", LabelKey = "filter_sort_rarity" });
+        SortOptions.Add(new LocalizedOption { Key = "potential", LabelKey = "filter_sort_potential" });
+        SortOptions.Add(new LocalizedOption { Key = "level", LabelKey = "filter_sort_level" });
+        SortOptions.Add(new LocalizedOption { Key = "name", LabelKey = "filter_sort_name" });
+
+        _selectedRarity = RarityOptions[0];
+        _selectedElement = ElementOptions[0];
+        _selectedClass = ClassOptions[0];
+        _selectedSort = SortOptions[0];
+        _selectedAchievementCategory = AchievementCategories[0];
+        _selectedLanguage = localization.AvailableLanguages
+            .FirstOrDefault(item => item.Code == localization.LanguagePreference) ?? localization.AvailableLanguages.FirstOrDefault();
+        _settingsStatus = L.T("settings_status_initial");
+        _freshnessText = L.T("freshness_none");
+
         RefreshCommand = new AsyncRelayCommand(() => RefreshAsync(false));
         TakeSnapshotCommand = new AsyncRelayCommand(TakeSnapshotAsync);
         SelectSnapshotCommand = new AsyncRelayCommand<SnapshotSummary>(snapshot => SelectSnapshotAsync(snapshot?.Id));
         OpenSnapshotCommand = new AsyncRelayCommand<SnapshotSummary>(snapshot => OpenSnapshotAsync(snapshot));
         ClearStatusCommand = new RelayCommand(() => StatusMessage = "");
-        Metrics =
-        [
-            new MetricOption { Key = "player_level", Label = "Уровень игрока" },
-            new MetricOption { Key = "world_level", Label = "World level" },
-            new MetricOption { Key = "stamina", Label = "Рассудок" },
-            new MetricOption { Key = "bp_level", Label = "Battle Pass" },
-            new MetricOption { Key = "achieve_count", Label = "Достижения" },
-            new MetricOption { Key = "char_num", Label = "Операторы" },
-            new MetricOption { Key = "weapon_num", Label = "Оружие" },
-            new MetricOption { Key = "doc_num", Label = "Документы" },
-            new MetricOption { Key = "credit", Label = "Кредиты" },
-            new MetricOption { Key = "seek", Label = "Seek Suspicion" },
-        ];
-        _selectedMetric = Metrics[0];
         AddTestOperatorCommand = new RelayCommand(AddTestOperator);
         AddVesperCommand = new RelayCommand(AddVesper);
-        LoadDevProfileCommand = new RelayCommand(LoadDevProfile);
+        LoadDevProfileCommand = new RelayCommand(() => LoadDevProfile());
         ResetTestDataCommand = new RelayCommand(ResetTestData);
+        ReloadLanguagesCommand = new RelayCommand(ReloadLanguages);
+
+        Metrics =
+        [
+            new MetricOption { Key = "player_level", LabelKey = "metric_player_level" },
+            new MetricOption { Key = "world_level", LabelKey = "metric_world_level" },
+            new MetricOption { Key = "stamina", LabelKey = "metric_stamina" },
+            new MetricOption { Key = "bp_level", LabelKey = "metric_bp" },
+            new MetricOption { Key = "achieve_count", LabelKey = "metric_achievements" },
+            new MetricOption { Key = "char_num", LabelKey = "metric_operators" },
+            new MetricOption { Key = "weapon_num", LabelKey = "metric_weapons" },
+            new MetricOption { Key = "doc_num", LabelKey = "metric_documents" },
+            new MetricOption { Key = "credit", LabelKey = "metric_credits" },
+            new MetricOption { Key = "seek", LabelKey = "metric_seek" },
+        ];
+        _selectedMetric = Metrics[0];
+        SetPage("overview");
     }
 
     public event EventHandler<string>? NavigateRequested;
@@ -92,22 +125,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ObservableCollection<OperatorModel> FilteredOperators { get; } = [];
     public ObservableCollection<OperatorModel> TestOperators { get; } = [];
     public ObservableCollection<AchievementModel> FilteredAchievements { get; } = [];
-    public ObservableCollection<string> LanguageOptions { get; } = ["RU", "EN"];
-    public ObservableCollection<string> RarityOptions { get; } = ["Все", "6★", "5★", "4★"];
-    public ObservableCollection<string> ElementOptions { get; } = ["Все"];
-    public ObservableCollection<string> ClassOptions { get; } = ["Все"];
-    public ObservableCollection<string> SortOptions { get; } = ["Редкость", "Пот", "Уровень", "Имя"];
-    public ObservableCollection<string> AchievementCategories { get; } = ["Все"];
+    public ObservableCollection<LanguageOption> LanguageOptions => LocalizationService.Instance.AvailableLanguages;
+    public ObservableCollection<LocalizedOption> RarityOptions { get; } = [];
+    public ObservableCollection<LocalizedOption> ElementOptions { get; } = [];
+    public ObservableCollection<LocalizedOption> ClassOptions { get; } = [];
+    public ObservableCollection<LocalizedOption> SortOptions { get; } = [];
+    public ObservableCollection<LocalizedOption> AchievementCategories { get; } = [];
     public ObservableCollection<MetricOption> Metrics { get; }
     public ObservableCollection<NavItem> NavItems { get; } =
     [
-        new NavItem { Key = "overview", Label = "Обзор", Icon = "\uE80F", Eyebrow = "// OVERVIEW" },
-        new NavItem { Key = "roster", Label = "Ростер", Icon = "\uE716", Eyebrow = "// ROSTER" },
-        new NavItem { Key = "dynamics", Label = "Динамика", Icon = "\uE9D9", Eyebrow = "// TIMELINE" },
-        new NavItem { Key = "progress", Label = "Прогресс", Icon = "\uE909", Eyebrow = "// DOMAINS / EVENTS" },
-        new NavItem { Key = "achievements", Label = "Достижения", Icon = "\uE7C1", Eyebrow = "// ACHIEVEMENTS" },
-        new NavItem { Key = "snapshots", Label = "Снимки", Icon = "\uE81C", Eyebrow = "// ARCHIVE" },
-        new NavItem { Key = "settings", Label = "Настройки", Icon = "\uE713", Eyebrow = "// SETTINGS" },
+        new NavItem { Key = "overview", LabelKey = "nav_overview", Icon = "\uE80F", Eyebrow = "// OVERVIEW" },
+        new NavItem { Key = "roster", LabelKey = "nav_roster", Icon = "\uE716", Eyebrow = "// ROSTER" },
+        new NavItem { Key = "dynamics", LabelKey = "nav_dynamics", Icon = "\uE9D9", Eyebrow = "// TIMELINE" },
+        new NavItem { Key = "progress", LabelKey = "nav_progress", Icon = "\uE909", Eyebrow = "// DOMAINS / EVENTS" },
+        new NavItem { Key = "achievements", LabelKey = "nav_achievements", Icon = "\uE7C1", Eyebrow = "// ACHIEVEMENTS" },
+        new NavItem { Key = "snapshots", LabelKey = "nav_snapshots", Icon = "\uE81C", Eyebrow = "// ARCHIVE" },
+        new NavItem { Key = "settings", LabelKey = "nav_settings", Icon = "\uE713", Eyebrow = "// SETTINGS" },
     ];
 
     public ICommand RefreshCommand { get; }
@@ -119,6 +152,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public ICommand AddVesperCommand { get; }
     public ICommand LoadDevProfileCommand { get; }
     public ICommand ResetTestDataCommand { get; }
+    public ICommand ReloadLanguagesCommand { get; }
 
     public SnapshotMeta? Meta
     {
@@ -160,15 +194,15 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public int PlatedCount => Data?.PlatedCount ?? 0;
     public string InventoryText => Data == null
         ? "—"
-        : $"{Data.Extras.Inventory.Equips:N0} / {Data.Extras.Inventory.EquipCopies:N0}".Replace(",", " ");
+        : string.Format(AppCulture.Current, "{0:N0} / {1:N0}", Data.Extras.Inventory.Equips, Data.Extras.Inventory.EquipCopies);
     public int DomainsCount => Data?.Domains.Count ?? 0;
     public int LocationsCount => Data?.Domains.Sum(domain => domain.Collections.Count) ?? 0;
     public string LatestText => Meta?.Latest?.DisplayDate ?? "—";
-    public string PlayerName => Data?.Snapshot.PlayerName ?? "нет данных";
+    public string PlayerName => Data?.Snapshot.PlayerName ?? L.T("no_data");
     public string PlayerMeta => Data == null
-        ? "снимок не загружен"
+        ? L.T("snapshot_not_loaded")
         : $"LV {Data.Snapshot.PlayerLevel?.ToString() ?? "—"} · WL {Data.Snapshot.WorldLevel?.ToString() ?? "—"} · v{Data.Snapshot.GameVersion ?? "?"}";
-    public string PlayerInitial => string.IsNullOrWhiteSpace(PlayerName) || PlayerName == "нет данных" ? "?" : PlayerName.Trim()[..1].ToUpperInvariant();
+    public string PlayerInitial => string.IsNullOrWhiteSpace(PlayerName) || PlayerName == L.T("no_data") ? "?" : PlayerName.Trim()[..1].ToUpperInvariant();
     public IEnumerable<OperatorModel> TopOperators => ActiveOperators.Take(8);
 
     private IEnumerable<OperatorModel> ActiveOperators
@@ -183,8 +217,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     public bool HasDiffChanges => Data?.Diff?.HasChanges == true;
     public IEnumerable<DiffLine> OverviewDiffLines => Data?.Diff?.AllLines.Take(8) ?? [];
     public string DiffEmptyText => Data?.Diff == null
-        ? "Первый снимок — база для будущей динамики."
-        : "Изменений с прошлым снимком нет.";
+        ? L.T("diff_empty_first")
+        : L.T("diff_empty_none");
 
     public SnapshotSummary? FirstSnapshot => Snapshots.LastOrDefault();
 
@@ -212,7 +246,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (!Set(ref _showTestOperators, value)) return;
             ApplyRosterFilters();
             OnPropertyChanged(nameof(TopOperators));
-            SettingsStatus = value ? "Тестовые операторы видны." : "Тестовые операторы скрыты.";
+            SettingsStatus = L.T(value ? "settings_status_test_visible" : "settings_status_test_hidden");
         }
     }
 
@@ -225,22 +259,30 @@ public sealed class MainViewModel : INotifyPropertyChanged
             if (value) LoadDevProfile();
             else
             {
-                SettingsStatus = "DEV-профиль выключен: возвращаю реальные снимки.";
+                SettingsStatus = L.T("settings_status_dev_off");
                 _ = RefreshAsync(true);
             }
         }
     }
 
-    public string SelectedLanguage
+    public LanguageOption? SelectedLanguage
     {
         get => _selectedLanguage;
         set
         {
-            if (!Set(ref _selectedLanguage, value)) return;
-            SettingsStatus = value == "EN"
-                ? "EN-перевод пока не реализован: сначала соберём термины с вики."
-                : "Язык интерфейса: RU.";
+            if (!Set(ref _selectedLanguage, value) || value == null) return;
+            LocalizationService.Instance.SetPreference(value.Code);
         }
+    }
+
+    public string CurrentPageKey => _currentPageKey;
+
+    public void SetPage(string key)
+    {
+        var item = NavItems.FirstOrDefault(nav => nav.Key == key) ?? NavItems[0];
+        _currentPageKey = item.Key;
+        PageTitle = item.Label;
+        PageEyebrow = item.Eyebrow;
     }
 
     public string SettingsStatus
@@ -311,7 +353,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SelectedRarity
+    public LocalizedOption? SelectedRarity
     {
         get => _selectedRarity;
         set
@@ -320,7 +362,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SelectedElement
+    public LocalizedOption? SelectedElement
     {
         get => _selectedElement;
         set
@@ -329,7 +371,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SelectedClass
+    public LocalizedOption? SelectedClass
     {
         get => _selectedClass;
         set
@@ -338,7 +380,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SelectedSort
+    public LocalizedOption? SelectedSort
     {
         get => _selectedSort;
         set
@@ -367,7 +409,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    public string SelectedAchievementCategory
+    public LocalizedOption? SelectedAchievementCategory
     {
         get => _selectedAchievementCategory;
         set
@@ -438,7 +480,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (!DatabaseExists)
         {
             StatusIsError = true;
-            StatusMessage = $"Нет базы: {DbPath}. Сначала запусти scripts\\snapshot.py";
+            StatusMessage = L.T("status_no_database", DbPath);
             return;
         }
         await RefreshAsync(true);
@@ -456,7 +498,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _devProfile = null;
         _refreshing = true;
         IsBusy = true;
-        BusyText = "Читаю снимки…";
+        BusyText = L.T("status_reading_snapshots");
         try
         {
             var meta = await Task.Run(_dataService.LoadMeta);
@@ -473,7 +515,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 SelectSnapshotSilently(null);
                 Data = null;
                 StatusIsError = true;
-                StatusMessage = "Снимков пока нет. Нажми «Снять снимок».";
+                StatusMessage = L.T("status_no_snapshots");
                 return;
             }
             SelectSnapshotSilently(target);
@@ -528,7 +570,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (manageBusy)
         {
             IsBusy = true;
-            BusyText = "Загружаю снимок…";
+            BusyText = L.T("status_loading_snapshot");
         }
         try
         {
@@ -557,14 +599,17 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         var elements = data.Operators.Select(item => item.Element).Where(item => !string.IsNullOrWhiteSpace(item)).Distinct().OrderBy(item => item).ToList();
         var classes = data.Operators.Select(item => item.Class).Where(item => !string.IsNullOrWhiteSpace(item)).Distinct().OrderBy(item => item).ToList();
-        ReplaceOptions(ElementOptions, ["Все", .. elements!]);
-        ReplaceOptions(ClassOptions, ["Все", .. classes!]);
-        if (!ElementOptions.Contains(SelectedElement)) SelectedElement = "Все";
-        if (!ClassOptions.Contains(SelectedClass)) SelectedClass = "Все";
+        var selectedElementKey = SelectedElement?.Key ?? FilterAllKey;
+        var selectedClassKey = SelectedClass?.Key ?? FilterAllKey;
+        ReplaceOptions(ElementOptions, BuildValueOptions(elements!));
+        ReplaceOptions(ClassOptions, BuildValueOptions(classes!));
+        SelectedElement = ElementOptions.FirstOrDefault(item => item.Key == selectedElementKey) ?? ElementOptions[0];
+        SelectedClass = ClassOptions.FirstOrDefault(item => item.Key == selectedClassKey) ?? ClassOptions[0];
 
         var categories = data.Achievements.Select(item => item.Category).Where(item => !string.IsNullOrWhiteSpace(item)).Distinct().OrderBy(item => item).ToList();
-        ReplaceOptions(AchievementCategories, ["Все", .. categories!]);
-        if (!AchievementCategories.Contains(SelectedAchievementCategory)) SelectedAchievementCategory = "Все";
+        var selectedCategoryKey = SelectedAchievementCategory?.Key ?? FilterAllKey;
+        ReplaceOptions(AchievementCategories, BuildValueOptions(categories!));
+        SelectedAchievementCategory = AchievementCategories.FirstOrDefault(item => item.Key == selectedCategoryKey) ?? AchievementCategories[0];
 
         ApplyRosterFilters();
         ApplyAchievementFilters();
@@ -577,7 +622,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         UpdateFreshness();
     }
 
-    private static void ReplaceOptions(ObservableCollection<string> target, IEnumerable<string> values)
+    private static List<LocalizedOption> BuildValueOptions(IEnumerable<string> values) =>
+    [
+        new LocalizedOption { Key = FilterAllKey, LabelKey = "filter_all" },
+        .. values.Select(value => new LocalizedOption { Key = value, Fallback = value }),
+    ];
+
+    private static void ReplaceOptions<T>(ObservableCollection<T> target, IEnumerable<T> values)
     {
         var list = values.ToList();
         if (target.SequenceEqual(list)) return;
@@ -598,20 +649,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         var query = RosterSearch.Trim();
+        var rarityKey = SelectedRarity?.Key ?? FilterAllKey;
+        var elementKey = SelectedElement?.Key ?? FilterAllKey;
+        var classKey = SelectedClass?.Key ?? FilterAllKey;
         var filtered = source.Where(op =>
         {
-            if (SelectedRarity != "Все" && $"{(char)('0' + (op.Rarity ?? 0))}★" != SelectedRarity) return false;
-            if (SelectedElement != "Все" && op.Element != SelectedElement) return false;
-            if (SelectedClass != "Все" && op.Class != SelectedClass) return false;
+            if (rarityKey != FilterAllKey && $"{(char)('0' + (op.Rarity ?? 0))}" != rarityKey) return false;
+            if (elementKey != FilterAllKey && op.Element != elementKey) return false;
+            if (classKey != FilterAllKey && op.Class != classKey) return false;
             return query.Length == 0 ||
                    $"{op.Name} {op.DisplayName} {op.WeaponName} {op.Class} {op.Element}".Contains(query, StringComparison.OrdinalIgnoreCase);
         }).ToList();
 
-        filtered = SelectedSort switch
+        filtered = (SelectedSort?.Key ?? "rarity") switch
         {
-            "Имя" => filtered.OrderBy(op => op.DisplayName, StringComparer.OrdinalIgnoreCase).ToList(),
-            "Пот" => filtered.OrderByDescending(op => op.Potential).ThenByDescending(op => op.Rarity).ThenBy(op => op.Name).ToList(),
-            "Уровень" => filtered.OrderByDescending(op => op.Level).ThenByDescending(op => op.Rarity).ThenBy(op => op.Name).ToList(),
+            "name" => filtered.OrderBy(op => op.DisplayName, StringComparer.OrdinalIgnoreCase).ToList(),
+            "potential" => filtered.OrderByDescending(op => op.Potential).ThenByDescending(op => op.Rarity).ThenBy(op => op.Name).ToList(),
+            "level" => filtered.OrderByDescending(op => op.Level).ThenByDescending(op => op.Rarity).ThenBy(op => op.Name).ToList(),
             _ => filtered.OrderByDescending(op => op.Rarity).ThenByDescending(op => op.Potential).ThenBy(op => op.Name).ToList(),
         };
 
@@ -630,8 +684,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         var query = AchievementSearch.Trim();
+        var categoryKey = SelectedAchievementCategory?.Key ?? FilterAllKey;
         var filtered = Data.Achievements.Where(item =>
-            (SelectedAchievementCategory == "Все" || item.Category == SelectedAchievementCategory) &&
+            (categoryKey == FilterAllKey || item.Category == categoryKey) &&
             (query.Length == 0 || $"{item.Name} {item.Category}".Contains(query, StringComparison.OrdinalIgnoreCase)));
         FilteredAchievements.Clear();
         foreach (var item in filtered) FilteredAchievements.Add(item);
@@ -665,7 +720,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
             Label = SelectedMetric.Label,
             Points = points,
             ValueText = last == null ? "—" : FormatMetric(last.Value),
-            DeltaText = delta == null ? "" : delta == 0 ? " · без изменений" : $" · {(delta > 0 ? "+" : "")}{FormatMetric(delta.Value)} за период",
+            DeltaText = delta == null
+                ? ""
+                : delta == 0
+                    ? L.T("chart_no_changes")
+                    : L.T("chart_delta_period", $"{(delta > 0 ? "+" : "")}{FormatMetric(delta.Value)}"),
         };
     }
 
@@ -722,7 +781,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private void LoadDevProfile()
+    private void LoadDevProfile(bool navigate = true)
     {
         if (!_useDevProfile)
         {
@@ -750,8 +809,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
         };
         SelectSnapshotSilently(latest);
         LoadDevSnapshot(latest.Id);
-        SettingsStatus = "DEV-профиль: 8 снимков, график и diff на фейковых данных.";
-        RequestNavigate("dynamics");
+        SettingsStatus = L.T("settings_status_dev_loaded");
+        if (navigate) RequestNavigate("dynamics");
     }
 
     private void LoadDevSnapshot(int snapshotId)
@@ -804,7 +863,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ShowTestOperators));
         ApplyRosterFilters();
         OnPropertyChanged(nameof(TopOperators));
-        SettingsStatus = $"Добавлен {name} без арта: должна быть буква T.";
+        SettingsStatus = L.T("settings_status_stub_added", name);
         RequestNavigate("roster");
     }
 
@@ -812,7 +871,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         if (TestOperators.Any(item => item.Name == "Vesper"))
         {
-            SettingsStatus = "Веспер уже в тестовом ростере.";
+            SettingsStatus = L.T("settings_status_vesper_exists");
             RequestNavigate("roster");
             return;
         }
@@ -822,7 +881,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         OnPropertyChanged(nameof(ShowTestOperators));
         ApplyRosterFilters();
         OnPropertyChanged(nameof(TopOperators));
-        SettingsStatus = "Добавлен Веспер: прозрачные icon/portrait/full из тестовых ассетов.";
+        SettingsStatus = L.T("settings_status_vesper_added");
         RequestNavigate("roster");
     }
 
@@ -847,18 +906,79 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(TopOperators));
         }
 
-        SettingsStatus = "Тестовые операторы и DEV-профиль очищены.";
+        SettingsStatus = L.T("settings_status_reset");
     }
 
     private void RequestNavigate(string key) => NavigateRequested?.Invoke(this, key);
+
+    private void OnLanguagesChanged(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(LanguageOptions));
+        var target = LanguageOptions
+            .FirstOrDefault(item => item.Code == LocalizationService.Instance.LanguagePreference)
+            ?? LanguageOptions.FirstOrDefault();
+        if (target == null) return;
+        _selectedLanguage = target;
+        OnPropertyChanged(nameof(SelectedLanguage));
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        SetPage(_currentPageKey);
+        StatusMessage = "";
+        SettingsStatus = L.T("settings_status_language_changed");
+
+        foreach (var item in NavItems) item.Refresh();
+        foreach (var item in Metrics) item.Refresh();
+        RefreshOptionLabels(RarityOptions);
+        RefreshOptionLabels(ElementOptions);
+        RefreshOptionLabels(ClassOptions);
+        RefreshOptionLabels(SortOptions);
+        RefreshOptionLabels(AchievementCategories);
+
+        OnPropertyChanged(string.Empty);
+        BuildChart();
+        _ = ReloadForLanguageAsync();
+    }
+
+    private static void RefreshOptionLabels(IEnumerable<LocalizedOption> options)
+    {
+        foreach (var option in options) option.Refresh();
+    }
+
+    private void ReloadLanguages()
+    {
+        LocalizationService.Instance.Reload();
+        SettingsStatus = L.T("settings_status_languages_reloaded", LocalizationService.Instance.CurrentLanguageName);
+    }
+
+    private async Task ReloadForLanguageAsync()
+    {
+        if (Data == null) return;
+
+        if (_useDevProfile)
+        {
+            var selectedId = Data.Snapshot.Id;
+            LoadDevProfile(navigate: false);
+            var target = _devProfile?.Snapshots.FirstOrDefault(item => item.Id == selectedId);
+            if (target != null)
+            {
+                SelectSnapshotSilently(target);
+                LoadDevSnapshot(selectedId);
+            }
+            return;
+        }
+
+        await LoadSnapshotAsync(Data.Snapshot.Id, false);
+    }
 
     private async Task TakeSnapshotAsync()
     {
         if (IsBusy) return;
         IsBusy = true;
-        BusyText = "Снимаю снимок через API…";
+        BusyText = L.T("status_taking_snapshot");
         StatusIsError = false;
-        StatusMessage = "Запускаю snapshot.py…";
+        StatusMessage = L.T("status_starting_snapshot");
         try
         {
             var result = await _updateService.RunAsync();
@@ -872,8 +992,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             var latestId = Meta?.Latest?.Id;
             StatusIsError = false;
             StatusMessage = latestId is null
-                ? $"Снимок готов за {result.Duration.TotalSeconds:0.0} с"
-                : $"Снимок #{latestId} готов за {result.Duration.TotalSeconds:0.0} с";
+                ? L.T("status_snapshot_ready", result.Duration.TotalSeconds)
+                : L.T("status_snapshot_ready_id", latestId, result.Duration.TotalSeconds);
         }
         catch (Exception exception)
         {
@@ -891,7 +1011,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var latest = Meta?.Latest;
         if (latest == null)
         {
-            FreshnessText = "НЕТ СНИМКОВ";
+            FreshnessText = L.T("freshness_none");
             FreshnessState = "Bad";
             return;
         }
@@ -901,22 +1021,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
         var old = Meta?.AgeDays is >= 7;
         if (versionMismatch)
         {
-            FreshnessText = "ВЕРСИЯ СМЕНИЛАСЬ";
+            FreshnessText = L.T("freshness_version_changed");
             FreshnessState = "Bad";
         }
         else if (old)
         {
-            FreshnessText = "СТАРШЕ 7 ДНЕЙ";
+            FreshnessText = L.T("freshness_old");
             FreshnessState = "Warn";
         }
         else
         {
-            FreshnessText = $"СВЕЖИЙ · {Ago(latest.TakenAtServer)}";
+            FreshnessText = L.T("freshness_fresh", Ago(latest.TakenAtServer));
             FreshnessState = "Good";
         }
         if (isArchive)
         {
-            FreshnessText = $"АРХИВ #{Data?.Snapshot.Id}";
+            FreshnessText = L.T("freshness_archive", Data?.Snapshot.Id ?? 0);
             FreshnessState = "Warn";
         }
     }
@@ -925,10 +1045,10 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         if (!DateTimeOffset.TryParse(iso, out var date)) return "—";
         var span = DateTimeOffset.Now - date;
-        if (span.TotalMinutes < 1) return "только что";
-        if (span.TotalHours < 1) return $"{(int)span.TotalMinutes} мин";
-        if (span.TotalDays < 1) return $"{(int)span.TotalHours} ч {(int)span.Minutes} мин";
-        return $"{(int)span.TotalDays} д {(int)span.Hours} ч";
+        if (span.TotalMinutes < 1) return L.T("ago_just_now");
+        if (span.TotalHours < 1) return L.T("ago_minutes", (int)span.TotalMinutes);
+        if (span.TotalDays < 1) return L.T("ago_hours_minutes", (int)span.TotalHours, (int)span.Minutes);
+        return L.T("ago_days_hours", (int)span.TotalDays, (int)span.Hours);
     }
 
     private static double? MetricValue(SnapshotSummary snapshot, string key) => key switch
@@ -948,8 +1068,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private static string FormatMetric(double value) =>
         value == Math.Truncate(value)
-            ? value.ToString("N0", AppCulture.Ru)
-            : value.ToString("N1", AppCulture.Ru);
+            ? value.ToString("N0", AppCulture.Current)
+            : value.ToString("N1", AppCulture.Current);
 
     private bool Set<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {

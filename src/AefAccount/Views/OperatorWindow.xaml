@@ -3,7 +3,8 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         xmlns:controls="clr-namespace:AefAccount.Controls"
-        Title="Оператор"
+        xmlns:loc="clr-namespace:AefAccount.Localization"
+        Title="{loc:Loc operator_window_title}"
         Width="1000" Height="880"
         MinWidth="840" MinHeight="640"
         WindowStartupLocation="CenterOwner"
@@ -89,14 +90,14 @@
                                    Stretch="UniformToFill"/>
                         </Grid>
                     </Border>
-                    <TextBlock Text="// ОПЕРАТОР" Style="{StaticResource Text.Kicker}" Margin="8,0,0,0"
+                    <TextBlock Text="{loc:Loc operator_kicker}" Style="{StaticResource Text.Kicker}" Margin="8,0,0,0"
                                VerticalAlignment="Center"/>
                     <TextBlock Text="{Binding EnglishName}" Style="{StaticResource Text.Kicker}"
                                Foreground="{DynamicResource Brush.Text.Faint}" Margin="10,0,0,0"
                                VerticalAlignment="Center"/>
                 </StackPanel>
                 <Button Style="{StaticResource IconButton}" HorizontalAlignment="Right" Width="30" Height="28"
-                        Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="Закрыть">
+                        Click="Close_Click" shell:WindowChrome.IsHitTestVisibleInChrome="True" ToolTip="{loc:Loc window_close}">
                     <TextBlock Text="&#xE8BB;" FontFamily="Segoe MDL2 Assets" FontSize="10"/>
                 </Button>
             </Grid>
@@ -122,7 +123,7 @@
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
                             <StackPanel>
-                                <TextBlock Text="// ОПЕРАТОР" Style="{StaticResource PaperMono}" FontSize="9"/>
+                                <TextBlock Text="{loc:Loc operator_kicker}" Style="{StaticResource PaperMono}" FontSize="9"/>
                                 <TextBlock Text="{Binding DisplayName}" Style="{StaticResource Text.PaperName}" Margin="0,2,0,0"/>
                                 <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
                                     <TextBlock Text="{Binding EnglishName}" Style="{StaticResource PaperMono}"/>
@@ -188,7 +189,7 @@
 
                             <!-- Stats -->
                             <StackPanel Grid.Column="1" Margin="24,0,0,0">
-                                <TextBlock Text="// ПОКАЗАТЕЛИ" Style="{StaticResource PaperMono}" FontSize="9"/>
+                                <TextBlock Text="{loc:Loc operator_stats}" Style="{StaticResource PaperMono}" FontSize="9"/>
                                 <Grid Margin="0,8,0,0">
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -203,28 +204,28 @@
                                         <RowDefinition Height="32"/>
                                     </Grid.RowDefinitions>
 
-                                    <TextBlock Grid.Row="0" Text="Редкость" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="0" Text="{loc:Loc operator_rarity}" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Rarity, StringFormat={}{0}★}"
                                                FontFamily="{StaticResource Font.Mono}" FontSize="13" FontWeight="SemiBold"
                                                Foreground="{DynamicResource Brush.Paper.Ink}" VerticalAlignment="Center"/>
 
-                                    <TextBlock Grid.Row="1" Text="Стихия" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="1" Text="{loc:Loc operator_element}" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Element}" Style="{StaticResource PaperMono}"
                                                FontSize="12" Foreground="{DynamicResource Brush.Paper.Ink}" VerticalAlignment="Center"/>
 
-                                    <TextBlock Grid.Row="2" Text="Класс" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="2" Text="{loc:Loc operator_class}" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding Class}" Style="{StaticResource PaperMono}"
                                                FontSize="12" Foreground="{DynamicResource Brush.Paper.Ink}" VerticalAlignment="Center"/>
 
-                                    <TextBlock Grid.Row="3" Text="Потенциал" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="3" Text="{loc:Loc operator_potential}" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding PotentialText}" Style="{StaticResource PaperMono}"
                                                FontSize="12" Foreground="{DynamicResource Brush.Paper.Ink}" VerticalAlignment="Center"/>
 
-                                    <TextBlock Grid.Row="4" Text="Прорыв" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="4" Text="{loc:Loc operator_breakthrough}" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding EvolveText}" Style="{StaticResource PaperMono}"
                                                FontSize="12" Foreground="{DynamicResource Brush.Paper.Ink}" VerticalAlignment="Center"/>
 
-                                    <TextBlock Grid.Row="5" Text="Получен" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Row="5" Text="{loc:Loc operator_obtained}" Style="{StaticResource PaperLabel}" VerticalAlignment="Center"/>
                                     <TextBlock Grid.Row="5" Grid.Column="1" Text="{Binding AcquiredText}" Style="{StaticResource PaperMono}"
                                                FontSize="11" Foreground="{DynamicResource Brush.Paper.Ink}" VerticalAlignment="Center"/>
                                 </Grid>
@@ -251,12 +252,12 @@
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <StackPanel>
-                                            <TextBlock Text="// ОРУЖИЕ" Style="{StaticResource PaperMono}" FontSize="9"/>
-                                            <TextBlock Text="{Binding WeaponName, TargetNullValue=Не надето}"
+                                            <TextBlock Text="{loc:Loc operator_weapon}" Style="{StaticResource PaperMono}" FontSize="9"/>
+                                            <TextBlock Text="{Binding WeaponNameText}"
                                                        FontFamily="{StaticResource Font.Ui}" FontSize="15" FontWeight="SemiBold"
                                                        Foreground="{DynamicResource Brush.Paper.Ink}" Margin="0,3,0,0"/>
                                             <TextBlock Text="{Binding WeaponSummary}" Style="{StaticResource PaperMono}" Margin="0,3,0,0"/>
-                                            <TextBlock Text="{Binding WeaponGem, StringFormat=Сфера: {0}}" Style="{StaticResource PaperMono}"
+                                            <TextBlock Text="{Binding WeaponGem, Converter={StaticResource LocFormat}, ConverterParameter=operator_gem}" Style="{StaticResource PaperMono}"
                                                        Margin="0,2,0,0"/>
                                         </StackPanel>
                                         <TextBlock Grid.Column="1" Text="{Binding WeaponRefineText}" Style="{StaticResource PaperMono}"
@@ -276,7 +277,7 @@
                         </Grid>
 
                         <!-- Gear -->
-                        <TextBlock Text="// ГИР" Style="{StaticResource PaperMono}" FontSize="9" Margin="0,24,0,8"/>
+                        <TextBlock Text="{loc:Loc operator_gear}" Style="{StaticResource PaperMono}" FontSize="9" Margin="0,24,0,8"/>
                         <ItemsControl ItemsSource="{Binding GearSlots}">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate><UniformGrid Columns="5"/></ItemsPanelTemplate>
@@ -301,7 +302,7 @@
                         </ItemsControl>
 
                         <!-- Skills -->
-                        <TextBlock Text="// СКИЛЛЫ" Style="{StaticResource PaperMono}" FontSize="9" Margin="0,24,0,8"/>
+                        <TextBlock Text="{loc:Loc operator_skills}" Style="{StaticResource PaperMono}" FontSize="9" Margin="0,24,0,8"/>
                         <Border Style="{StaticResource PaperPanel}" Padding="14">
                             <StackPanel>
                                 <ItemsControl ItemsSource="{Binding Skills}"
@@ -330,38 +331,38 @@
                                         </DataTemplate>
                                     </ItemsControl.ItemTemplate>
                                 </ItemsControl>
-                                <TextBlock Text="Скиллы не пришли в ответе." Style="{StaticResource PaperMono}"
+                                <TextBlock Text="{loc:Loc operator_no_skills}" Style="{StaticResource PaperMono}"
                                            Visibility="{Binding HasSkills, Converter={StaticResource InverseBoolToVisibility}}"/>
                             </StackPanel>
                         </Border>
 
                         <!-- Talents -->
-                        <TextBlock Text="// ТАЛАНТЫ" Style="{StaticResource PaperMono}" FontSize="9" Margin="0,24,0,8"/>
+                        <TextBlock Text="{loc:Loc operator_talents}" Style="{StaticResource PaperMono}" FontSize="9" Margin="0,24,0,8"/>
                         <UniformGrid Columns="4" Margin="0,0,0,8">
                             <Border Style="{StaticResource PaperPanel}" Padding="12" Margin="0,0,8,0">
                                 <StackPanel>
-                                    <TextBlock Text="ПРОРЫВ" Style="{StaticResource PaperMono}" FontSize="9"/>
+                                    <TextBlock Text="{loc:Loc operator_break}" Style="{StaticResource PaperMono}" FontSize="9"/>
                                     <TextBlock Text="{Binding Talents.BreakLabel}" FontFamily="{StaticResource Font.Mono}"
                                                FontSize="14" Foreground="{DynamicResource Brush.Paper.Ink}" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource PaperPanel}" Padding="12" Margin="0,0,8,0">
                                 <StackPanel>
-                                    <TextBlock Text="ПАССИВНЫЕ" Style="{StaticResource PaperMono}" FontSize="9"/>
+                                    <TextBlock Text="{loc:Loc operator_passive}" Style="{StaticResource PaperMono}" FontSize="9"/>
                                     <TextBlock Text="{Binding Talents.PassiveText}" FontFamily="{StaticResource Font.Mono}"
                                                FontSize="14" Foreground="{DynamicResource Brush.Paper.Ink}" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource PaperPanel}" Padding="12" Margin="0,0,8,0">
                                 <StackPanel>
-                                    <TextBlock Text="ФАБРИКА" Style="{StaticResource PaperMono}" FontSize="9"/>
+                                    <TextBlock Text="{loc:Loc operator_factory}" Style="{StaticResource PaperMono}" FontSize="9"/>
                                     <TextBlock Text="{Binding Talents.FactoryText}" FontFamily="{StaticResource Font.Mono}"
                                                FontSize="14" Foreground="{DynamicResource Brush.Paper.Ink}" Margin="0,4,0,0"/>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource PaperPanel}" Padding="12">
                                 <StackPanel>
-                                    <TextBlock Text="КОРАБЛЬ" Style="{StaticResource PaperMono}" FontSize="9"/>
+                                    <TextBlock Text="{loc:Loc operator_ship}" Style="{StaticResource PaperMono}" FontSize="9"/>
                                     <TextBlock Text="{Binding Talents.ShipText}" FontFamily="{StaticResource Font.Mono}"
                                                FontSize="14" Foreground="{DynamicResource Brush.Paper.Ink}" Margin="0,4,0,0"/>
                                 </StackPanel>

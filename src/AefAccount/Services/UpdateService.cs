@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Text;
+using AefAccount.Localization;
 
 namespace AefAccount.Services;
 
@@ -23,7 +24,7 @@ public sealed class UpdateService
         var script = Path.Combine(_repoRoot, "scripts", "snapshot.py");
         if (!File.Exists(script))
         {
-            return new UpdateResult(false, -1, "", $"Не найден скрипт: {script}", started.Elapsed);
+            return new UpdateResult(false, -1, "", L.T("update_script_missing", script), started.Elapsed);
         }
 
         var startInfo = new ProcessStartInfo
@@ -47,7 +48,7 @@ public sealed class UpdateService
             using var process = new Process { StartInfo = startInfo };
             if (!process.Start())
             {
-                return new UpdateResult(false, -1, "", "Не удалось запустить python.", started.Elapsed);
+                return new UpdateResult(false, -1, "", L.T("update_python_failed"), started.Elapsed);
             }
 
             var outputTask = process.StandardOutput.ReadToEndAsync(cancellationToken);
@@ -59,7 +60,7 @@ public sealed class UpdateService
         }
         catch (OperationCanceledException)
         {
-            return new UpdateResult(false, -1, "", "Обновление отменено.", started.Elapsed);
+            return new UpdateResult(false, -1, "", L.T("update_cancelled"), started.Elapsed);
         }
         catch (Exception exception)
         {

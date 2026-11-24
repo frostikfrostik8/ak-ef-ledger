@@ -1,6 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
+using AefAccount.Localization;
 using AefAccount.Models;
 using AefAccount.ViewModels;
 using AefAccount.Views;
@@ -20,6 +22,15 @@ public partial class MainWindow : Window
         ViewModel.NavigateRequested += (_, key) => NavigateTo(key);
         Loaded += MainWindow_Loaded;
         StateChanged += (_, _) => UpdateMaximizeIcon();
+        LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
+        Closed += (_, _) => LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        // Пересоздаём текущую страницу: строки моделей (диффы, даты, гир)
+        // вычисляются в момент биндинга и не реализуют INPC.
+        Dispatcher.BeginInvoke(new Action(() => ShowPage(ViewModel.CurrentPageKey)), DispatcherPriority.Background);
     }
 
     private void TitleBar_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -110,9 +121,7 @@ public partial class MainWindow : Window
 
     private void ShowPage(string key)
     {
-        var item = ViewModel.NavItems.FirstOrDefault(nav => nav.Key == key) ?? ViewModel.NavItems[0];
-        ViewModel.PageTitle = item.Label;
-        ViewModel.PageEyebrow = item.Eyebrow;
+        ViewModel.SetPage(key);
         ContentHost.Children.Clear();
         FrameworkElement view = key switch
         {

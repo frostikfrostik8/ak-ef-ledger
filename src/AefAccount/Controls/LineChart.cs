@@ -1,6 +1,6 @@
-using System.Globalization;
 using System.Windows;
 using System.Windows.Media;
+using AefAccount.Localization;
 using AefAccount.Models;
 
 namespace AefAccount.Controls;
@@ -37,16 +37,16 @@ public sealed class LineChart : FrameworkElement
         var line = Brush("Brush.Line.Soft");
         if (chart == null || chart.Points.Count == 0)
         {
-            DrawCentered(drawingContext, "НЕТ ДАННЫХ ДЛЯ ГРАФИКА", width, height, muted, 11, Mono());
+            DrawCentered(drawingContext, L.T("chart_no_data"), width, height, muted, 11, Mono());
             return;
         }
 
         if (chart.Points.Count == 1)
         {
             var point = chart.Points[0];
-            DrawCentered(drawingContext, point.Value.ToString("N0", AppCulture.Ru), width, height / 2 - 6, Brush("Brush.Text"), 46, Display());
+            DrawCentered(drawingContext, point.Value.ToString("N0", AppCulture.Current), width, height / 2 - 6, Brush("Brush.Text"), 46, Display());
             DrawCentered(drawingContext, $"{chart.Label.ToUpperInvariant()} · {point.Label}", width, height / 2 + 36, muted, 11, Mono());
-            DrawCentered(drawingContext, "СНИМИ ЕЩЁ РАЗ — ПОЯВИТСЯ ЛИНИЯ ДИНАМИКИ", width, height / 2 + 58, faint, 10, Mono());
+            DrawCentered(drawingContext, L.T("chart_need_more"), width, height / 2 + 58, faint, 10, Mono());
             return;
         }
 
@@ -80,8 +80,8 @@ public sealed class LineChart : FrameworkElement
             var y = Math.Round(Y(value)) + 0.5;
             drawingContext.DrawLine(gridPen, new Point(left, y), new Point(width - right, y));
             var label = Math.Abs(value - Math.Round(value)) < 0.0001
-                ? Math.Round(value).ToString("N0", AppCulture.Ru)
-                : (Math.Round(value * 10) / 10).ToString("N1", AppCulture.Ru);
+                ? Math.Round(value).ToString("N0", AppCulture.Current)
+                : (Math.Round(value * 10) / 10).ToString("N1", AppCulture.Current);
             DrawText(drawingContext, label, 10, faint, new Point(left - 10, y), TextAlignment.Right, VerticalAlignment.Center, Mono());
         }
 
@@ -123,7 +123,7 @@ public sealed class LineChart : FrameworkElement
     {
         var formatted = new FormattedText(
             text,
-            CultureInfo.GetCultureInfo("ru-RU"),
+            AppCulture.Current,
             FlowDirection.LeftToRight,
             new Typeface(family, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
             size,
@@ -140,7 +140,7 @@ public sealed class LineChart : FrameworkElement
     {
         var formatted = new FormattedText(
             text,
-            CultureInfo.GetCultureInfo("ru-RU"),
+            AppCulture.Current,
             FlowDirection.LeftToRight,
             new Typeface(family, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
             size,

@@ -1,4 +1,5 @@
 using System.Globalization;
+using AefAccount.Localization;
 using AefAccount.Models;
 
 namespace AefAccount.Services;
@@ -68,7 +69,7 @@ public static class DevDataService
                 Seek = seek,
                 SeekMax = 200_000,
                 AchieveCount = achieve,
-                DiffSummary = index == 0 ? "dev: первый снимок" : "dev: тестовый прирост",
+                DiffSummary = index == 0 ? L.T("dev_diff_first") : L.T("dev_diff_growth"),
                 MainMission = "Test the timeline",
                 CreatedTs = "2025-12-01T10:00:00+08:00",
                 LastLoginTs = date.ToString("o", CultureInfo.InvariantCulture),

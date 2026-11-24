@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.IO;
 using System.Text.Json;
+using AefAccount.Localization;
 using AefAccount.Models;
 using Microsoft.Data.Sqlite;
 
@@ -106,7 +107,7 @@ public sealed class DataService
     {
         using var connection = Open();
         var snapshot = ReadSnapshots(connection, "SELECT * FROM snapshots WHERE id = @id", ("@id", snapshotId)).FirstOrDefault()
-            ?? throw new InvalidOperationException($"Нет снимка #{snapshotId}");
+            ?? throw new InvalidOperationException(L.T("data_snapshot_missing", snapshotId));
 
         var operators = LoadOperators(connection, snapshotId);
         var gear = LoadGear(connection, snapshotId);

@@ -9,9 +9,9 @@
     <AssemblyName>AkEfLedger</AssemblyName>
     <Product>AK:EF Ledger</Product>
     <Title>AK:EF Ledger</Title>
-    <Version>0.3.0</Version>
-    <FileVersion>0.3.0.0</FileVersion>
-    <AssemblyVersion>0.3.0.0</AssemblyVersion>
+    <Version>0.3.1</Version>
+    <FileVersion>0.3.1.0</FileVersion>
+    <AssemblyVersion>0.3.1.0</AssemblyVersion>
     <ApplicationIcon>Assets\akef.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -20,6 +20,20 @@
     <Resource Include="Assets\akef.ico" />
     <Resource Include="Assets\Fonts\*.ttf" />
     <Resource Include="Assets\Operators\**\*.png" />
+  </ItemGroup>
+
+  <!-- Языковые файлы: внешние lang/*.json рядом с exe + встроенный резерв. -->
+  <ItemGroup>
+    <None Remove="Localization\Lang\ru.json" />
+    <None Remove="Localization\Lang\en.json" />
+    <Content Include="Localization\Lang\ru.json" Link="lang\ru.json"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="Localization\Lang\en.json" Link="lang\en.json"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Localization\Lang\ru.json" />
+    <EmbeddedResource Include="Localization\Lang\en.json" />
+    <None Update="Localization\Lang\README.md" Link="lang\README.md"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

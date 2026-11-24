@@ -3,6 +3,7 @@ using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using AefAccount;
+using AefAccount.Localization;
 using AefAccount.Models;
 using AefAccount.ViewModels;
 
@@ -34,7 +35,7 @@ public partial class SnapshotsView : UserControl
         var path = Path.IsPathRooted(relative) ? relative : Path.Combine(vm.RepoRoot, relative);
         if (!File.Exists(path))
         {
-            MessageBox.Show($"Файл не найден:\n{path}", "AEF", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(L.T("message_file_not_found", path), "AEF", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         try
@@ -43,7 +44,7 @@ public partial class SnapshotsView : UserControl
         }
         catch (Exception exception)
         {
-            MessageBox.Show(exception.Message, "Не удалось открыть файл", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(exception.Message, L.T("message_open_file_error"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }
