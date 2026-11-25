@@ -2,8 +2,8 @@
 
 ## Security cleanup (2026-11-25)
 
-- Removed `data/seed.sql` — an accidentally published sample roster with
-  personal notes — from the repository, git history and release zips.
+- Removed `data/seed.sql` — an accidentally published sample seed file — from
+  the repository, git history and release zips.
 - `init_db.cmd` works without it: `schema.sql` creates an empty database.
 - Release assets `v0.2.0`–`v0.4.2` were rebuilt without `data/seed.sql`.
   The application binaries are unchanged.
