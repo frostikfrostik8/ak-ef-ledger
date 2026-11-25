@@ -1,5 +1,19 @@
 # Changelog
 
+## v0.4.3 - operator art cache (2026-11-25)
+
+- Operator art is resolved by `char_id` first, then by manifest aliases and
+  the local name/slug map. Unknown API operators can use a local cache without
+  a code change.
+- `snapshot.py` caches `avatar_url` (icon) and `illustration_url` (full) under
+  `data/art_cache/<char_id>/`; failures never break a snapshot.
+- Opening an older snapshot also backfills missing art on demand from the
+  stored API URLs; the roster prefers a portrait, then the small icon, then
+  full art, then the letter.
+- Art lookup order: curated art pack → API cache → embedded Vesper → letter.
+- `tools/make_art_pack.py --catalog <json>` writes `charId`, `name`, `ru` and
+  `en` into `manifest.json`, so pack aliases work for new operators.
+
 ## Security cleanup (2026-11-25)
 
 - Removed `data/seed.sql` — an accidentally published sample seed file — from

@@ -199,8 +199,8 @@ public sealed class OperatorModel
         ? OperatorArt.RuName(Name)
         : OperatorArt.EnglishName(Name);
     public string EnglishName => OperatorArt.EnglishName(Name);
-    public string? ArtSlug => OperatorArt.Slug(Name);
-    public bool HasLocalArt => OperatorArt.HasLocalArt(Name);
+    public string? ArtSlug => OperatorArt.Slug(Name, CharId);
+    public bool HasLocalArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Portrait);
     public string RarityStars => new('★', Math.Clamp(Rarity ?? 0, 0, 6));
     public string ElementHex => ColorPalette.Element(Element);
     public string ElementTintHex => ColorPalette.ElementTint(Element);

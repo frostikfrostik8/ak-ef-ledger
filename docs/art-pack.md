@@ -28,9 +28,32 @@ without `manifest.json` is valid — the loader simply probes `icon.png`,
 2. folder selected in **Settings → Operator art** (`%LOCALAPPDATA%\AkEfLedger\settings.json`, key `artDir`);
 3. `%LOCALAPPDATA%\AkEfLedger\art\operators` — downloaded pack;
 4. `assets\operators` next to `AkEfLedger.exe` — portable build;
-5. embedded Vesper and the letter fallback.
+5. `data\art_cache\<char_id>\{icon,full}.png` — automatic cache from Skport
+   artwork URLs, written by `snapshot.py`;
+6. embedded Vesper and the letter fallback.
 
 If a folder is empty or has no `icon/portrait/full.png`, it is skipped.
+
+## API art cache
+
+`snapshot.py` also caches the official `avatar_url` and `illustration_url` from
+the API response:
+
+```text
+data/art_cache/<char_id>/
+  icon.png      # avatar_url, 144x144
+  full.png      # illustration_url, up to 1200x1440
+  source.json   # source URLs, used to skip unchanged files
+```
+
+This is a fallback for operators that are not in the curated art pack. It is
+local-only, never committed or published. Use `--no-art-cache` to disable it
+or `--art-cache-dir <path>` to choose another cache directory.
+
+The WPF app also backfills this cache when an older snapshot is opened: it
+checks the local pack/cache first, then downloads only the missing images from
+the API URLs stored in that snapshot. On the roster card, `portrait` falls back
+to `icon`, then `full`, then the letter.
 
 ## manifest.json
 
@@ -46,6 +69,7 @@ add name aliases for operators that are not hardcoded in `OperatorArt.cs`.
   "operators": [
     {
       "slug": "akekuri",
+      "charId": "a0591d65311b190e7d5e09faa0ed1cdd",
       "name": "Akekuri",
       "ru": "Акэкури",
       "en": "Akekuri",
@@ -59,8 +83,9 @@ add name aliases for operators that are not hardcoded in `OperatorArt.cs`.
 }
 ```
 
-`name`, `ru`, `en` and `files` are optional. When `files[].sha256` is present,
-the installer verifies every hash before replacing the active pack.
+`charId`, `name`, `ru`, `en` and `files` are optional. `charId` is the stable
+API character id and is preferred over display names. When `files[].sha256` is
+present, the installer verifies every hash before replacing the active pack.
 
 ## Installing a pack
 
@@ -90,8 +115,13 @@ C:\AEF\dist\design-references\Сайт\operators\<slug>\{icon,portrait,full}.png
 python tools/make_art_pack.py `
   --source "C:/AEF/dist/design-references/Сайт/operators" `
   --out "C:/AEF/dist/release/art-v1" `
-  --version 1
+  --version 1 `
+  --catalog "C:/AEF/data/operator_catalog.json"
 ```
+
+`--catalog` is optional JSON (a list or `{"operators": [...]}`) with
+`slug`, `charId`, `name`, `ru`, `en` fields. It makes aliases in the manifest
+work for operators that are not in the built-in dictionary.
 
 Output:
 

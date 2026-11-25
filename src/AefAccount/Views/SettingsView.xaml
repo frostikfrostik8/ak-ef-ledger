@@ -191,7 +191,7 @@
                             </StackPanel>
                             <TextBlock Text="Arknights: Endfield · account terminal" Style="{StaticResource Text.Meta}"
                                        FontSize="11" Margin="12,4,0,0"/>
-                            <TextBlock Text="v0.4.2" Style="{StaticResource Text.MonoSmall}" Margin="12,8,0,0"/>
+                            <TextBlock Text="v0.4.3" Style="{StaticResource Text.MonoSmall}" Margin="12,8,0,0"/>
 
                             <Border Style="{StaticResource Divider}" Margin="0,14,0,12"/>
 

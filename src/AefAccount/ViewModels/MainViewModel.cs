@@ -329,7 +329,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public bool CanRemoveArtNow => CanUseArt && CanRemoveArtPack;
 
-    public bool ShowArtBanner => !HasArtPack && (Data?.Operators.Count ?? 0) > 0;
+    public bool ShowArtBanner => !HasArtPack && !OperatorArt.HasApiCache && (Data?.Operators.Count ?? 0) > 0;
 
     public bool IsArtBusy
     {
@@ -659,6 +659,19 @@ public sealed class MainViewModel : INotifyPropertyChanged
         try
         {
             var data = await Task.Run(() => _dataService.LoadSnapshot(snapshotId));
+
+            // Сначала локальный арт-пак/кэш; отсутствующие арты догружаем
+            // асинхронно из официальных URL снимка до отрисовки карточек.
+            try
+            {
+                await OperatorArtCache.EnsureAsync(data.Operators);
+            }
+            catch (Exception)
+            {
+                // Сеть/URL не должны мешать показать ростер.
+            }
+            OperatorArt.Initialize();
+
             Data = data;
             var summary = Snapshots.FirstOrDefault(item => item.Id == snapshotId);
             if (summary != null && SelectedSnapshot?.Id != snapshotId) SelectSnapshotSilently(summary);
@@ -1079,6 +1092,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 return;
             }
             await RefreshAsync(true);
+            RefreshArtStatus();
             var latestId = Meta?.Latest?.Id;
             StatusIsError = false;
             StatusMessage = latestId is null

@@ -35,6 +35,7 @@ public sealed class ArtManifest
 public sealed class ArtManifestOperator
 {
     public string Slug { get; set; } = "";
+    public string? CharId { get; set; }
     public string? Name { get; set; }
     public string? Ru { get; set; }
     public string? En { get; set; }

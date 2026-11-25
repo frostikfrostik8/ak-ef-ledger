@@ -19,14 +19,20 @@ The token grants full access to the account.
 
 ## Data
 
-`data/*.db`, `data/snapshots/`, `data/last_sync.json`, `context/account-*.md`
-and `context/` contain private account data. They are gitignored. Do not
-attach them to public issues.
+`data/*.db`, `data/snapshots/`, `data/art_cache/`, `data/last_sync.json`,
+`context/account-*.md` and `context/` contain private account data. They are
+gitignored. Do not attach them to public issues.
 
 ## Network
 
-The app's only network request is the optional **Download** button for the art
-pack (`art-v1.zip` from GitHub Releases). It runs only after an explicit click.
+The app makes two optional kinds of network requests:
+
+- the **Download** button for the art pack (`art-v1.zip` from GitHub Releases),
+  only after an explicit click;
+- missing operator images (`https://static.skport.com/...`) when a snapshot is
+  opened. Only HTTPS URLs with a `skport.com` host are accepted; no token is
+  sent and images are cached under `data/art_cache/`.
+
 `scripts/snapshot.py` contacts only the official Skport API, and only when the
 user presses “Снять снимок” or runs `update_snapshot.cmd`. There is no
 telemetry.
