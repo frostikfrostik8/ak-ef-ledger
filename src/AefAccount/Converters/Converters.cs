@@ -74,6 +74,8 @@ public sealed class OperatorArtConverter : IValueConverter
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var kind = ParseKind(parameter);
+        if (value is OperatorModel op)
+            return OperatorArt.Load(op.Name, op.CharId, kind);
         return OperatorArt.Load(value?.ToString(), kind);
     }
 
@@ -94,6 +96,8 @@ public sealed class OperatorArtVisibilityConverter : IValueConverter
     public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
     {
         var kind = OperatorArtConverter.ParseKind(parameter);
+        if (value is OperatorModel op)
+            return OperatorArt.Has(op.Name, op.CharId, kind) ? Visibility.Collapsed : Visibility.Visible;
         return OperatorArt.Has(value?.ToString(), kind) ? Visibility.Collapsed : Visibility.Visible;
     }
 

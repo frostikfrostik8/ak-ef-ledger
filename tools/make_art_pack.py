@@ -76,7 +76,31 @@ def optimize_full(path: str, max_size: int) -> bytes:
         return buffer.getvalue()
 
 
-def build(source: str, out: str, max_size: int, version: str, raw: bool) -> int:
+def load_catalog(path: str | None) -> dict[str, dict]:
+    """Необязательный каталог: slug -> charId/name/ru/en."""
+    if not path:
+        return {}
+    with open(path, encoding="utf-8-sig") as stream:
+        data = json.load(stream)
+    operators = data.get("operators") if isinstance(data, dict) else data
+    if not isinstance(operators, list):
+        sys.exit("Каталог должен содержать список operators")
+    result: dict[str, dict] = {}
+    for item in operators:
+        if not isinstance(item, dict):
+            continue
+        slug = str(item.get("slug") or "").strip()
+        if not slug:
+            continue
+        result[slug.casefold()] = {
+            key: str(item[key]).strip()
+            for key in ("charId", "name", "ru", "en")
+            if item.get(key)
+        }
+    return result
+
+
+def build(source: str, out: str, max_size: int, version: str, raw: bool, catalog: dict[str, dict] | None = None) -> int:
     source = os.path.abspath(source)
     out = os.path.abspath(out)
     if not os.path.isdir(source):
@@ -108,6 +132,7 @@ def build(source: str, out: str, max_size: int, version: str, raw: bool) -> int:
     processed = 0
     for slug in slugs:
         entry: dict[str, object] = {"slug": slug, "files": {}}
+        entry.update((catalog or {}).get(slug.casefold(), {}))
         for kind in KINDS:
             source_file = os.path.join(source, slug, kind + ".png")
             if not os.path.isfile(source_file):
@@ -173,8 +198,9 @@ def main() -> int:
     parser.add_argument("--max-size", type=int, default=1200, help="Максимальная сторона full (px)")
     parser.add_argument("--version", default="1", help="Версия пака")
     parser.add_argument("--raw", action="store_true", help="Не пережимать full, копировать как есть")
+    parser.add_argument("--catalog", help="JSON: slug -> charId/name/ru/en для manifest aliases")
     args = parser.parse_args()
-    return build(args.source, args.out, args.max_size, args.version, args.raw)
+    return build(args.source, args.out, args.max_size, args.version, args.raw, load_catalog(args.catalog))
 
 
 if __name__ == "__main__":
