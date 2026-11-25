@@ -1,5 +1,13 @@
 # Changelog
 
+## Security cleanup (2026-11-25)
+
+- Removed `data/seed.sql` — an accidentally published sample roster with
+  personal notes — from the repository, git history and release zips.
+- `init_db.cmd` works without it: `schema.sql` creates an empty database.
+- Release assets `v0.2.0`–`v0.4.2` were rebuilt without `data/seed.sql`.
+  The application binaries are unchanged.
+
 ## v0.4.2 - local database fix (2026-11-25)
 
 ### Fixed
@@ -7,8 +15,8 @@
 - The app uses **only its own folder** for `data/`, `scripts/` and
   `.secrets/`. It no longer walks up into a parent workspace or falls back to
   `C:\AEF`, which could show a foreign database from a parent folder.
-- `build.cmd` copies `data/schema.sql`, `data/seed.sql` and `scripts/*.py`
-  into the publish folder, so a source build is self-contained.
+- `build.cmd` copies `data/schema.sql` and `scripts/*.py` into the publish
+  folder, so a source build is self-contained.
 
 ### Changed
 

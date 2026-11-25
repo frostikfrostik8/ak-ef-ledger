@@ -149,7 +149,7 @@ cd ak-ef-ledger
 .\run.cmd
 ```
 
-`build.cmd` копирует `data/schema.sql`, `data/seed.sql` и `scripts/*.py` в
+`build.cmd` копирует `data/schema.sql` и `scripts/*.py` в
 `src/AefAccount/publish`. Если БД ещё нет: перейди в `src\AefAccount\publish`
 и выполни `python scripts\aef.py init`.
 

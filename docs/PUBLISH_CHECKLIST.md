@@ -1,13 +1,13 @@
 # Public release checklist
 
-The repository is intentionally **private** until this list is done and the
-owner approves the visibility switch.
+The repository is **public** since v0.4.1; this list remains the release gate.
 
 ## Secrets and private data
 
-- [ ] `git log --all -- .secrets data/aef.db data/snapshots` returns nothing.
+- [ ] `git log --all -- .secrets data/aef.db data/snapshots context data/last_sync.json` returns nothing.
 - [ ] No `*.token`, `endfield_token*`, account dumps or screenshots of private
       data in the repository.
+- [ ] `data/seed.sql` is absent from HEAD and release zips; `git log --all -- data/seed.sql` returns nothing.
 - [ ] Release zip contains no `data/aef.db`, no `.secrets` token and no
       `data/snapshots`.
 - [ ] Real operator art files are not committed; only

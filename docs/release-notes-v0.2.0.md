@@ -18,14 +18,14 @@ Arknights: Endfield account data.
 ### Release asset
 
 `AK-EF-Ledger-v0.2.0-win-x64.zip` contains the framework-dependent single-file
-app, schema/seed, snapshot scripts and launch/update helpers.
+app, schema, snapshot scripts and launch/update helpers.
 
 ### Notes
 
 - Requires .NET 8 Desktop Runtime and Python 3.10+ for snapshots.
 - Real operator artwork is not included; supply your own local files.
 - This is an unofficial fan project, not affiliated with HYPERGRYPH/GRYPHLINE.
-- The repository remains private while the public release is prepared.
+- The repository is public since v0.4.1.
 
 ## Русский
 
@@ -45,11 +45,11 @@ app, schema/seed, snapshot scripts and launch/update helpers.
 ### Файл релиза
 
 `AK-EF-Ledger-v0.2.0-win-x64.zip` — framework-dependent single-file приложение,
-schema/seed, скрипты снимков и launch/update-хелперы.
+schema, скрипты снимков и launch/update-хелперы.
 
 ### Примечания
 
 - Нужны .NET 8 Desktop Runtime и Python 3.10+ для снимков.
 - Реальные арты операторов не входят; подключите свои локальные файлы.
 - Неофициальный фанатский проект, не связан с HYPERGRYPH/GRYPHLINE.
-- Репозиторий остаётся приватным, пока готовится публичный релиз.
+- Репозиторий публичный с v0.4.1.

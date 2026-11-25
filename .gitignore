@@ -7,10 +7,14 @@ publish/
 
 # Local account data
 .secrets/
-data/aef.db
-data/aef.db-shm
-data/aef.db-wal
+context/
+data/*.db
+data/*.db-shm
+data/*.db-wal
+data/last_sync.json
 data/snapshots/
+token.txt
+*.token
 
 # Real operator art is local-only (copyright/size).
 # The AI-generated test operator Vesper is committed as an exception.
