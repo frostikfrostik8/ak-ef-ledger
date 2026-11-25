@@ -14,8 +14,8 @@
 
 **AK:EF Ledger** is a desktop app for Windows that shows your **Arknights:
 Endfield** account in one place. It is not a browser, a web panel or a website:
-it is a regular `.exe` that reads a local SQLite database and works without the
-internet except when you take a snapshot.
+it is a regular `.exe` that reads a local SQLite database and works offline;
+internet is needed for snapshots and optional operator-art downloads.
 
 Endfield spreads useful information across several screens: how much Sanity and
 credits you have, what gear an operator uses, what changed since last week, how
@@ -170,8 +170,8 @@ From the Skport API through `scripts/snapshot.py`. The app only reads the local
 SQLite database.
 
 **Does it work offline?**
-Yes for viewing, filters, charts and diff. Internet is needed only to take a
-new snapshot.
+Yes for viewing, filters, charts and diff. Internet is needed to take a new
+snapshot and, optionally, to download missing operator-art images.
 
 **Is it safe to enter the key?**
 The key is stored locally in `.secrets/`, is not logged and is not sent by the
