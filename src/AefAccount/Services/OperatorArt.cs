@@ -255,8 +255,8 @@ public static class OperatorArt
     {
         OperatorArtKind.Icon => [OperatorArtKind.Icon, OperatorArtKind.Full],
         OperatorArtKind.Full => [OperatorArtKind.Full, OperatorArtKind.Portrait, OperatorArtKind.Icon],
-        OperatorArtKind.Detail => [OperatorArtKind.Detail, OperatorArtKind.Portrait, OperatorArtKind.Full, OperatorArtKind.Icon],
-        _ => [OperatorArtKind.Portrait, OperatorArtKind.Full, OperatorArtKind.Icon],
+        OperatorArtKind.Detail => [OperatorArtKind.Detail, OperatorArtKind.Portrait, OperatorArtKind.Icon, OperatorArtKind.Full],
+        _ => [OperatorArtKind.Portrait, OperatorArtKind.Icon, OperatorArtKind.Full],
     };
 
     private static string FileName(OperatorArtKind kind) => kind switch

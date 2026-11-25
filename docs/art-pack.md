@@ -50,6 +50,11 @@ This is a fallback for operators that are not in the curated art pack. It is
 local-only, never committed or published. Use `--no-art-cache` to disable it
 or `--art-cache-dir <path>` to choose another cache directory.
 
+The WPF app also backfills this cache when an older snapshot is opened: it
+checks the local pack/cache first, then downloads only the missing images from
+the API URLs stored in that snapshot. On the roster card, `portrait` falls back
+to `icon`, then `full`, then the letter.
+
 ## manifest.json
 
 The manifest is optional metadata. It lets the app show the pack version and

@@ -7,6 +7,9 @@
   a code change.
 - `snapshot.py` caches `avatar_url` (icon) and `illustration_url` (full) under
   `data/art_cache/<char_id>/`; failures never break a snapshot.
+- Opening an older snapshot also backfills missing art on demand from the
+  stored API URLs; the roster prefers a portrait, then the small icon, then
+  full art, then the letter.
 - Art lookup order: curated art pack → API cache → embedded Vesper → letter.
 - `tools/make_art_pack.py --catalog <json>` writes `charId`, `name`, `ru` and
   `en` into `manifest.json`, so pack aliases work for new operators.

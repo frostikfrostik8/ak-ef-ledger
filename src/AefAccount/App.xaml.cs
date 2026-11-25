@@ -16,7 +16,9 @@ public partial class App : Application
             .FirstOrDefault(arg => arg.StartsWith("--art-dir=", StringComparison.OrdinalIgnoreCase))
             ?.Split('=', 2)[1];
         ArtPack.Initialize(artDir);
-        OperatorArt.Initialize(Path.Combine(DataService.FindRepoRoot(), "data", "art_cache"));
+        var artCacheRoot = Path.Combine(DataService.FindRepoRoot(), "data", "art_cache");
+        OperatorArt.Initialize(artCacheRoot);
+        OperatorArtCache.Initialize(artCacheRoot);
 
         base.OnStartup(e);
     }
