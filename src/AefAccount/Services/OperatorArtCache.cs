@@ -12,7 +12,7 @@ namespace AefAccount.Services;
 /// </summary>
 public static class OperatorArtCache
 {
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
 
     private static string? _root;
 
