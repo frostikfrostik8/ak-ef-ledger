@@ -1,5 +1,6 @@
 using System.IO;
 using System.Net.Http;
+using System.Text.Json;
 using AefAccount.Models;
 
 namespace AefAccount.Services;
@@ -86,6 +87,19 @@ public static class OperatorArtCache
         {
             try { await DownloadAsync(op.IllustrationUrl ?? op.AvatarUrl, fullPath, cancellationToken); }
             catch (Exception exception) when (exception is not OperationCanceledException) { }
+        }
+
+        var source = new Dictionary<string, string>();
+        if (File.Exists(iconPath) && !string.IsNullOrWhiteSpace(op.AvatarUrl))
+            source["icon"] = op.AvatarUrl;
+        if (File.Exists(fullPath) && !string.IsNullOrWhiteSpace(op.IllustrationUrl))
+            source["full"] = op.IllustrationUrl;
+        if (source.Count > 0)
+        {
+            var sourcePath = Path.Combine(folder, "source.json");
+            var temporary = sourcePath + ".tmp";
+            File.WriteAllText(temporary, JsonSerializer.Serialize(source, new JsonSerializerOptions { WriteIndented = true }));
+            File.Move(temporary, sourcePath, true);
         }
     }
 
