@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using AefAccount.Services;
 
@@ -15,7 +16,7 @@ public partial class App : Application
             .FirstOrDefault(arg => arg.StartsWith("--art-dir=", StringComparison.OrdinalIgnoreCase))
             ?.Split('=', 2)[1];
         ArtPack.Initialize(artDir);
-        OperatorArt.Initialize();
+        OperatorArt.Initialize(Path.Combine(DataService.FindRepoRoot(), "data", "art_cache"));
 
         base.OnStartup(e);
     }

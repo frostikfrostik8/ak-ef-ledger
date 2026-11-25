@@ -24,10 +24,12 @@ import gzip
 import hashlib
 import json
 import re
+import shutil
 import sqlite3
 import sys
 import time
 import urllib.error
+import urllib.request
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -42,6 +44,7 @@ SNAP_DIR = ROOT / "data" / "snapshots"
 LATEST_MD = ROOT / "context" / "account-sync.md"
 HISTORY_MD = ROOT / "context" / "account-history.md"
 VERSION_FILE = ROOT / "data" / "game_version.txt"
+ART_CACHE_DIR = ROOT / "data" / "art_cache"
 SERVER_TZ = timezone(timedelta(hours=8))
 
 GEAR_SLOTS = (
@@ -929,6 +932,82 @@ def parse_detail(detail: dict, extras: dict) -> dict:
 # ---------------------------------------------------------------------------
 # Файлы
 # ---------------------------------------------------------------------------
+
+def download_image(url: str, target: Path) -> None:
+    """Скачать PNG атомарно; официальный CDN не требует токена."""
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temporary = target.with_name(target.name + ".tmp")
+    request = urllib.request.Request(
+        url,
+        headers={"User-Agent": sync.UA, "Accept": "image/*"},
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response, open(temporary, "wb") as handle:
+            shutil.copyfileobj(response, handle, length=1 << 20)
+        if temporary.stat().st_size == 0:
+            raise RuntimeError("empty image")
+        with temporary.open("rb") as handle:
+            if handle.read(8) != b"\x89PNG\r\n\x1a\n":
+                raise RuntimeError("not a PNG")
+        temporary.replace(target)
+    except Exception:
+        temporary.unlink(missing_ok=True)
+        raise
+
+
+def cache_operator_art(operators: list[dict], cache_dir: Path) -> None:
+    """Кэшировать avatar/illustration из ответа API для карточек без арт-пака.
+
+    Файлы лежат локально: data/art_cache/<char_id>/{icon,full}.png.
+    Ошибка одного изображения не должна ломать снимок.
+    """
+    if not operators:
+        return
+
+    for op in operators:
+        char_id = str(op.get("char_id") or "").strip()
+        if not re.fullmatch(r"[0-9a-fA-F]{16,64}", char_id):
+            continue
+
+        folder = cache_dir / safe_version(char_id)
+        source_path = folder / "source.json"
+        previous = {}
+        if source_path.exists():
+            try:
+                previous = json.loads(source_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError, json.JSONDecodeError):
+                previous = {}
+        if not isinstance(previous, dict):
+            previous = {}
+
+        current: dict[str, str] = {}
+        candidates = (
+            ("icon", op.get("avatar_url")),
+            ("full", op.get("illustration_url") or op.get("avatar_url")),
+        )
+        for kind, raw_url in candidates:
+            url = str(raw_url or "").strip()
+            if not url:
+                continue
+            target = folder / f"{kind}.png"
+            if target.exists() and previous.get(kind) == url:
+                current[kind] = url
+                continue
+            try:
+                download_image(url, target)
+                current[kind] = url
+            except Exception as exc:  # noqa: BLE001 - арт не должен ронять снимок
+                print(f"! art cache {op.get('name') or char_id}/{kind}: {exc}")
+
+        if current:
+            folder.mkdir(parents=True, exist_ok=True)
+            temporary = source_path.with_name(source_path.name + ".tmp")
+            temporary.write_text(
+                json.dumps(current, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            temporary.replace(source_path)
+
 
 def write_raw(envelope: dict, version: str, taken_at: datetime, plain: bool = False) -> dict:
     SNAP_DIR.mkdir(parents=True, exist_ok=True)
@@ -2343,6 +2422,13 @@ def cmd_take(con: sqlite3.Connection, args) -> None:
     update_current_tables(con, parsed, snap, snapshot_id, prune=not args.no_prune)
     con.commit()
 
+    if not args.no_art_cache:
+        cache_dir = Path(args.art_cache_dir) if args.art_cache_dir else ART_CACHE_DIR
+        try:
+            cache_operator_art(parsed["operators"], cache_dir)
+        except Exception as exc:  # noqa: BLE001 - кэш артов не должен ронять снимок
+            print(f"! art cache: {exc}")
+
     data = load_snapshot_data(con, snapshot_id)
     previous_id = previous_snapshot_id(con, snapshot_id)
     previous = load_snapshot_data(con, previous_id) if previous_id else None
@@ -2664,6 +2750,8 @@ def main() -> None:
     parser.add_argument("--no-extras", action="store_true", help="не тянуть доп. GET-эндпоинты")
     parser.add_argument("--no-report", action="store_true", help="не писать Markdown-отчёты")
     parser.add_argument("--no-prune", action="store_true", help="не отмечать отсутствующих операторов как owned=0")
+    parser.add_argument("--no-art-cache", action="store_true", help="не кэшировать avatar/illustration операторов")
+    parser.add_argument("--art-cache-dir", help="куда кэшировать арты (по умолчанию data/art_cache)")
     parser.add_argument("--plain-json", action="store_true", help="писать сырой JSON без gzip")
     parser.add_argument("--limit", type=int, default=30, help="сколько снимков в history")
     parser.add_argument("--json", action="store_true", help="JSON-вывод для history/show/diff")

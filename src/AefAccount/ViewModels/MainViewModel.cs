@@ -329,7 +329,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public bool CanRemoveArtNow => CanUseArt && CanRemoveArtPack;
 
-    public bool ShowArtBanner => !HasArtPack && (Data?.Operators.Count ?? 0) > 0;
+    public bool ShowArtBanner => !HasArtPack && !OperatorArt.HasApiCache && (Data?.Operators.Count ?? 0) > 0;
 
     public bool IsArtBusy
     {
@@ -1079,6 +1079,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 return;
             }
             await RefreshAsync(true);
+            RefreshArtStatus();
             var latestId = Meta?.Latest?.Id;
             StatusIsError = false;
             StatusMessage = latestId is null

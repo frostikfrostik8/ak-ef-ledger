@@ -8,8 +8,8 @@ The repository is **public** since v0.4.1; this list remains the release gate.
 - [ ] No `*.token`, `endfield_token*`, account dumps or screenshots of private
       data in the repository.
 - [ ] `data/seed.sql` is absent from HEAD and release zips; `git log --all -- data/seed.sql` returns nothing.
-- [ ] Release zip contains no `data/aef.db`, no `.secrets` token and no
-      `data/snapshots`.
+- [ ] Release zip contains no `data/aef.db`, no `.secrets` token, no
+      `data/snapshots` and no `data/art_cache`.
 - [ ] Real operator art files are not committed; only
       `src/AefAccount/Assets/Operators/vesper/` is present. Screenshots under
       `docs/screenshots/` are illustrative; art files themselves are not tracked.
