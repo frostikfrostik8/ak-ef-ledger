@@ -122,8 +122,8 @@ AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
 операторов и ключей; арт-пак — отдельный релиз. Скачать:
 [github.com/frostikfrostik8/ak-ef-ledger/releases](https://github.com/frostikfrostik8/ak-ef-ledger/releases).
 
-**v0.4.2** — исправление поиска локальной БД; интерфейс не менялся,
-скриншоты сняты на v0.4.1.
+**v0.4.3** — кэш артов операторов и поиск по `char_id`; остальной интерфейс
+не менялся, скриншоты сняты на v0.4.1.
 
 ## Установка (пакет релиза)
 

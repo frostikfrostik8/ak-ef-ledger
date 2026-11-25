@@ -123,8 +123,8 @@ The repository is **public**. The main app build contains no real operator art
 and no keys; the art pack is a separate release. See the
 [releases](https://github.com/frostikfrostik8/ak-ef-ledger/releases).
 
-**v0.4.2** is a local database resolution fix; the UI is unchanged, so the
-README screenshots are from v0.4.1.
+**v0.4.3** adds operator-art caching and `char_id` lookup; the rest of the UI
+is unchanged, so the README screenshots are from v0.4.1.
 
 ## Installation (release package)
 

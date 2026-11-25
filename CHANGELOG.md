@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased — operator art resolution
+## v0.4.3 - operator art cache (2026-11-25)
 
 - Operator art is resolved by `char_id` first, then by manifest aliases and
   the local name/slug map. Unknown API operators can use a local cache without

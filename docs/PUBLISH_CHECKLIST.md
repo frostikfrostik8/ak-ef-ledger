@@ -18,7 +18,7 @@ The repository is **public** since v0.4.1; this list remains the release gate.
 
 - [ ] `build.cmd` passes on a clean Windows machine with .NET 10 SDK.
 - [ ] GitHub Actions `build` workflow is green.
-- [ ] `AK-EF-Ledger-v0.4.2-win-x64.zip` extracts, `init_db.cmd` creates the DB,
+- [ ] `AK-EF-Ledger-v0.4.3-win-x64.zip` extracts, `init_db.cmd` creates the DB,
       `launch.cmd` opens the app, DEV profile works without a token.
 - [ ] `lang/ru.json` and `lang/en.json` are present in the release package.
 - [ ] Release package contains `assets\operators\vesper\` only; no real art.
@@ -50,7 +50,7 @@ The repository is **public** since v0.4.1; this list remains the release gate.
 
 - [ ] Owner explicitly approves making the repository public.
 - [ ] `gh repo edit frostikfrostik8/ak-ef-ledger --visibility public --accept-visibility-change-consequences`
-- [ ] Release v0.4.2 is the latest public release.
+- [ ] Release v0.4.3 is the latest public release.
 - [ ] Watch issues/security advisories after publication.
 
 ## After publication
