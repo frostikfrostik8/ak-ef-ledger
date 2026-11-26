@@ -50,10 +50,14 @@ This is a fallback for operators that are not in the curated art pack. It is
 local-only, never committed or published. Use `--no-art-cache` to disable it
 or `--art-cache-dir <path>` to choose another cache directory.
 
-The WPF app also backfills this cache when an older snapshot is opened: it
-checks the local pack/cache first, then downloads only the missing images from
-the API URLs stored in that snapshot. On the roster card, `portrait` falls back
-to `icon`, then `full`, then the letter.
+The WPF app can also backfill this cache when an older snapshot is opened. This
+is **opt-in and off by default**: enable **Settings → Operator art → Download
+art automatically** first. The app checks the local pack/cache, then downloads
+only the missing images from the API URLs stored in that snapshot. On the
+roster card, `portrait` falls back to `icon`, then `full`, then the letter.
+
+Taking a snapshot with `snapshot.py` is a separate explicit action; the script
+may cache art from the API response. Pass `--no-art-cache` to prevent that.
 
 ## manifest.json
 

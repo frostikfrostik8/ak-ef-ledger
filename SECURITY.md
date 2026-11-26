@@ -25,17 +25,20 @@ gitignored. Do not attach them to public issues.
 
 ## Network
 
-The app makes two optional kinds of network requests:
+The app makes the following optional network requests:
 
 - the **Download** button for the art pack (`art-v1.zip` from GitHub Releases),
   only after an explicit click;
 - missing operator images (`https://static.skport.com/...`) when a snapshot is
-  opened. Only HTTPS URLs with a `skport.com` host are accepted; no token is
-  sent and images are cached under `data/art_cache/`.
+  opened, **only if Settings → Operator art → Download art automatically** is
+  enabled (off by default). Only HTTPS URLs with a `skport.com` host are
+  accepted; no token is sent and images are cached under `data/art_cache/`;
+- `scripts/snapshot.py` contacts the official Skport API only when the user
+  presses "Снять снимок" or runs `update_snapshot.cmd`. The snapshot action
+  may also cache official operator art from the API response; use
+  `--no-art-cache` to disable that part.
 
-`scripts/snapshot.py` contacts only the official Skport API, and only when the
-user presses “Снять снимок” or runs `update_snapshot.cmd`. There is no
-telemetry.
+There is no telemetry.
 
 ## Reporting
 

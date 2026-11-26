@@ -5,9 +5,10 @@
 - Opening a snapshot no longer waits for operator art downloads: the
   snapshot is shown immediately. Missing art is fetched in the background
   only after explicit consent.
-- Automatic art download is now **opt-in and off by default** (Settings →
-  Operator art). The app does not contact `static.skport.com` on its own until
-  the toggle is enabled.
+- Automatic art download for viewing is now **opt-in and off by default**
+  (Settings → Operator art). Taking a snapshot is a separate explicit action;
+  `snapshot.py` may cache art from the API response unless `--no-art-cache` is
+  passed.
 - Switching snapshots no longer covers the content with the modal busy
   overlay; the header ComboBox stays usable.
 - Rapid snapshot switching keeps the last selection (generation + cancellation,
@@ -16,12 +17,13 @@
   of another.
 - Background art updates already rendered roster cards and an open operator
   window (targeted `INotifyPropertyChanged` + `RefreshArt`).
-- Art cache checks each kind separately (`icon`/`full`), validates PNG files,
-  writes `source.json` only for confirmed files and uses unique temporary names.
-  A corrupt/unknown cache file is refreshed instead of freezing old art.
-- `source.json` is healed when the API URL changes; failed downloads keep the
-  old file and provenance.
-- Corrupt PNG files fall back to the letter instead of throwing during render.
+- Art cache checks each kind separately (`icon`/`full`), checks the PNG
+  signature, uses unique temporary names and refreshes changed URLs when
+  automatic download is enabled.
+- Failed downloads keep the old file; `source.json` is updated for changed
+  URLs when the cache is refreshed.
+- A corrupt PNG no longer throws during render; the cache entry is skipped
+  until it can be refreshed.
 - Art pack install/remove refreshes visible cards, not only the status line.
 - No database schema changes; existing snapshots remain compatible.
 

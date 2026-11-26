@@ -93,9 +93,13 @@ data/snapshots/*.json.gz  +  data/aef.db
 AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
 ```
 
-The app never talks to the network by itself. Python is needed only for the
-snapshot updater: `snapshot.py` reads the key from `.secrets/` and calls the
-Skport API. Viewing, filters, charts and diff work fully offline.
+The app does not fetch operator art for viewing unless **Settings → Operator
+art → Download art automatically** is enabled (off by default). Python is
+needed only for the snapshot updater: `snapshot.py` reads the key from
+`.secrets/` and calls the Skport API. The snapshot action is explicit; note
+that `snapshot.py` may cache official operator art as part of that action
+unless `--no-art-cache` is used. Viewing, filters, charts and diff work fully
+offline.
 
 ## Key and privacy
 
@@ -104,7 +108,8 @@ Skport API. Viewing, filters, charts and diff work fully offline.
 - The app does not send the key anywhere and does not write it to logs.
 - Only `snapshot.py` reads the key and passes it directly to the Skport API.
 - `data/aef.db`, `data/snapshots/` and `.secrets/` are not committed.
-- No cloud, no accounts, no analytics, no background network calls.
+- No cloud, no accounts, no analytics. Network is used only for explicit
+  snapshots and, if enabled, operator-art downloads.
 
 ## Translation
 
@@ -123,8 +128,9 @@ The repository is **public**. The main app build contains no real operator art
 and no keys; the art pack is a separate release. See the
 [releases](https://github.com/frostikfrostik8/ak-ef-ledger/releases).
 
-**v0.4.3** adds operator-art caching and `char_id` lookup; the rest of the UI
-is unchanged, so the README screenshots are from v0.4.1.
+**v0.4.4** fixes art loading/snapshot switching and makes automatic art
+download opt-in (off by default); **v0.4.3** added operator-art caching and
+`char_id` lookup. README screenshots are from v0.4.1.
 
 ## Installation (release package)
 
