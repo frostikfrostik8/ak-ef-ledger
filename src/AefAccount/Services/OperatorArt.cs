@@ -95,7 +95,9 @@ public static class OperatorArt
         _root = ArtPack.Status.Root;
         Cache.Clear();
         Paths.Clear();
-        BrokenPaths.Clear();
+        // BrokenPaths не очищаем: маркер привязан к длине/времени файла и сам
+        // снимается после замены. Иначе после смены снимка битый файл снова
+        // считался бы валидным и не перекачивался.
         Aliases.Clear();
         BySlug.Clear();
         ByCharId.Clear();

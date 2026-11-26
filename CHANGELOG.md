@@ -20,8 +20,9 @@
 - Background art updates already rendered roster cards and an open operator
   window (targeted `INotifyPropertyChanged` + `RefreshArt`).
 - Art cache checks each kind separately (`icon`/`full`), checks the PNG
-  signature, uses unique temporary names and refreshes changed URLs when
-  automatic download is enabled.
+  signature/IHDR/IEND, uses unique temporary names and refreshes changed URLs
+  when automatic download is enabled. A curated pack remains preferred: if an
+  operator has any art in the pack, the API kinds are not backfilled.
 - Failed downloads keep the old file; `source.json` is updated for changed
   URLs when the cache is refreshed and written only for an existing valid PNG.
 - Malformed `source.json` (`null` values, duplicate keys) no longer breaks the
@@ -33,9 +34,9 @@
 
 ## v0.4.3 - operator art cache (2026-11-25)
 
-- Operator art is resolved by `char_id` first, then by manifest aliases and
-  the local name/slug map. Unknown API operators can use a local cache without
-  a code change.
+- Operator art is resolved by the display name and manifest aliases first, then
+  by the stable API `char_id`, then by the name/slug map. Unknown API operators
+  can use a local cache without a code change.
 - `snapshot.py` caches `avatar_url` (icon) and `illustration_url` (full) under
   `data/art_cache/<char_id>/`; failures never break a snapshot.
 - Opening an older snapshot also backfills missing art on demand from the

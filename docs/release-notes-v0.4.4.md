@@ -21,9 +21,11 @@ Regression patch for v0.4.3.
   overlay of another one.
 - Background art updates already visible roster cards and an open operator
   window; no page reload is required.
-- The API art cache checks `icon` and `full` separately, checks the PNG
-  signature, uses unique temporary files and refreshes changed URLs when
-  automatic download is enabled. Failed downloads keep the old file.
+- The API art cache checks `icon` and `full` separately, validates the PNG
+  signature/IHDR/IEND, uses unique temporary files and refreshes changed URLs
+  when automatic download is enabled. Failed downloads keep the old file. A
+  curated pack is preferred: if an operator has any art in the pack, missing
+  API kinds are not backfilled.
 - `source.json` is written only for an existing valid PNG. Malformed files
   (`null` values, duplicate keys) no longer break the download queue.
 - A corrupt PNG falls back to the next local variant or the letter instead of
@@ -53,8 +55,10 @@ Regression patch for v0.4.3.
 - Фоновая загрузка обновляет уже нарисованные карточки ростера и открытое
   окно оператора без перезагрузки страницы.
 - Кэш API проверяет `icon` и `full` отдельно, проверяет PNG-сигнатуру,
-  использует уникальные временные файлы и обновляет изменённые URL при
-  включённой автодогрузке. При ошибке старый файл сохраняется.
+  IHDR и IEND, использует уникальные временные файлы и обновляет изменённые
+  URL при включённой автодогрузке. При ошибке старый файл сохраняется.
+  Курируемый пак в приоритете: если у оператора в паке есть любой арт,
+  недостающие виды из API не догружаются.
 - `source.json` пишется только для существующего валидного PNG. Битый файл
   (`null`-значения, дубли ключей) больше не роняет очередь загрузки.
 - Битый PNG переключается на следующий локальный вариант или букву, а не

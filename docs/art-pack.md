@@ -18,9 +18,9 @@ operators/
 ```
 
 File names and sizes are fixed; the game slug is the folder name. A folder
-without `manifest.json` is valid — the loader simply probes `icon.png`,
-`portrait.png` and `full.png` with the usual fallback chain
-(`full → portrait → icon`).
+without `manifest.json` is valid — the loader probes `icon.png`, `portrait.png`
+and `full.png`. The fallback order depends on the requested kind: for a roster
+card `portrait → icon → full`, for the detail window `full → portrait → icon`.
 
 ## Lookup order
 
@@ -46,15 +46,17 @@ data/art_cache/<char_id>/
   source.json   # source URLs, used to skip unchanged files
 ```
 
-This is a fallback for operators that are not in the curated art pack. It is
-local-only, never committed or published. Use `--no-art-cache` to disable it
-or `--art-cache-dir <path>` to choose another cache directory.
+This is a fallback for operators that are not in the curated art pack. The
+curated pack is preferred: if an operator already has any of `icon`, `portrait`
+or `full` in the pack, the app does not backfill the other kinds from the API.
+The cache is local-only, never committed or published. Use `--no-art-cache` to
+disable it or `--art-cache-dir <path>` to choose another cache directory.
 
 The WPF app can also backfill this cache when an older snapshot is opened. This
 is **opt-in and off by default**: enable **Settings → Operator art → Download
 art automatically** first. The app checks the local pack/cache, then downloads
-only the missing images from the API URLs stored in that snapshot. On the
-roster card, `portrait` falls back to `icon`, then `full`, then the letter.
+the missing images from the API URLs stored in that snapshot. On the roster
+card, `portrait` falls back to `icon`, then `full`, then the letter.
 
 Taking a snapshot with `snapshot.py` is a separate explicit action. From the
 app, the script receives `--no-art-cache` unless **Download art automatically**
@@ -90,13 +92,14 @@ add name aliases for operators that are not hardcoded in `OperatorArt.cs`.
 }
 ```
 
-`charId`, `name`, `ru`, `en` and `files` are optional. `charId` is the stable
-API character id and is preferred over display names. When `files[].sha256` is
-present, the installer verifies every hash before replacing the active pack.
+`charId`, `name`, `ru`, `en` and `files` are optional. Lookup tries the
+display name and manifest aliases first, then `charId` — the stable API
+character id. When `files[].sha256` is present, the installer verifies every
+hash before replacing the active pack.
 
 ## Installing a pack
 
-**Settings → Operator art** offers four actions:
+**Settings → Operator art** offers five actions:
 
 | Action | What it does |
 |---|---|
@@ -112,23 +115,23 @@ pack.
 
 ## Building the pack
 
-Source of truth is a local snapshot of the official site:
+Source of truth is a local snapshot of the official site (not committed):
 
 ```text
-C:\AEF\dist\design-references\Сайт\operators\<slug>\{icon,portrait,full}.png
+design-references/Сайт/operators/<slug>/{icon,portrait,full}.png
 ```
 
 ```powershell
 python tools/make_art_pack.py `
-  --source "C:/AEF/dist/design-references/Сайт/operators" `
-  --out "C:/AEF/dist/release/art-v1" `
-  --version 1 `
-  --catalog "C:/AEF/data/operator_catalog.json"
+  --source "design-references/Сайт/operators" `
+  --out "release/art-v1" `
+  --version 1
 ```
 
-`--catalog` is optional JSON (a list or `{"operators": [...]}`) with
-`slug`, `charId`, `name`, `ru`, `en` fields. It makes aliases in the manifest
-work for operators that are not in the built-in dictionary.
+Add `--catalog <path-to-catalog.json>` if you have a catalog of extra
+operators: optional JSON (a list or `{"operators": [...]}`) with `slug`,
+`charId`, `name`, `ru`, `en` fields. It makes aliases in the manifest work for
+operators that are not in the built-in dictionary.
 
 Output:
 

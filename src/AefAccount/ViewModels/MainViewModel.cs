@@ -23,6 +23,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private int _loadGeneration;
     private int? _selectionDuringRefresh;
     private CancellationTokenSource? _artCts;
+    private Task _artTask = Task.CompletedTask;
     private int _artGeneration = -1;
     private bool _artFetching;
     private bool _autoDownloadArt;
@@ -54,6 +55,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private string _compareHint = "";
     private int _compareGeneration;
     private readonly Dictionary<int, SnapshotData> _devData = [];
+    private readonly SemaphoreSlim _refreshGate = new(1, 1);
     private DevProfile? _devProfile;
     private bool _showTestOperators;
     private bool _useDevProfile;
@@ -648,7 +650,22 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public async Task RefreshAsync(bool selectLatest)
     {
-        if (_refreshing) return;
+        // Несколько Refresh (кнопка, снятие снимка, смена профиля) не должны
+        // выполняться параллельно: иначе поздний вызов молча терялся и
+        // TakeSnapshotAsync показывал старый Meta.
+        await _refreshGate.WaitAsync();
+        try
+        {
+            await RefreshCoreAsync(selectLatest);
+        }
+        finally
+        {
+            _refreshGate.Release();
+        }
+    }
+
+    private async Task RefreshCoreAsync(bool selectLatest)
+    {
         if (_useDevProfile)
         {
             _useDevProfile = false;
@@ -823,12 +840,37 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
 
         CancelArtFetch();
+        var previous = _artTask;
         var cts = new CancellationTokenSource();
         _artCts = cts;
         _artGeneration = generation;
         _artFetching = true;
         OnPropertyChanged(nameof(ShowArtBanner));
-        _ = FetchArtAsync(operators, pending, generation, cts);
+        _artTask = FetchArtQueuedAsync(previous, operators, pending, generation, cts);
+    }
+
+    /// <summary>
+    /// Дожидается завершения предыдущей пачки, чтобы отменённая загрузка не
+    /// дописала файл/source.json после новой. Отмена остаётся быстрой: старый
+    /// HTTP/файловый поток прерывается по CTS.
+    /// </summary>
+    private async Task FetchArtQueuedAsync(
+        Task previous,
+        IReadOnlyList<OperatorModel> operators,
+        IReadOnlyList<PendingArt> pending,
+        int generation,
+        CancellationTokenSource cts)
+    {
+        try
+        {
+            await previous;
+        }
+        catch (Exception)
+        {
+            // Прошлая пачка уже сообщила о своей ошибке; очередь не рушим.
+        }
+
+        await FetchArtAsync(operators, pending, generation, cts);
     }
 
     private async Task FetchArtAsync(

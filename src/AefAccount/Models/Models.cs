@@ -228,6 +228,7 @@ public sealed class OperatorModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocalArt)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ArtSlug)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayName)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(EnglishName)));
     }
     public string RarityStars => new('★', Math.Clamp(Rarity ?? 0, 0, 6));
     public string ElementHex => ColorPalette.Element(Element);

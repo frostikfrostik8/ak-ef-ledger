@@ -17,6 +17,8 @@ public static class OperatorArtCache
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    private static readonly byte[] PngHeader = [0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52];
+    private static readonly byte[] PngEnd = [0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, 0xAE, 0x42, 0x60, 0x82];
 
     private static string? _root;
 
@@ -136,28 +138,18 @@ public static class OperatorArtCache
         var iconFailed = false;
         if (pending.NeedIcon && iconUrl != null)
         {
-            if (!source.ContainsKey("icon") && IsValidPng(iconPath) && TryValidateUrl(iconUrl, out _))
+            try
             {
-                // Валидный файл без provenance (старый кэш snapshot.py):
-                // доверяем файлу и записываем текущий URL без перекачки.
-                source["icon"] = iconUrl;
-                changed = true;
+                iconDownloaded = await DownloadAsync(iconUrl, iconPath, cancellationToken).ConfigureAwait(false);
+                iconFailed = !iconDownloaded;
             }
-            else
+            catch (OperationCanceledException)
             {
-                try
-                {
-                    iconDownloaded = await DownloadAsync(iconUrl, iconPath, cancellationToken).ConfigureAwait(false);
-                    iconFailed = !iconDownloaded;
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception)
-                {
-                    iconFailed = true;
-                }
+                throw;
+            }
+            catch (Exception)
+            {
+                iconFailed = true;
             }
         }
 
@@ -165,28 +157,24 @@ public static class OperatorArtCache
         var fullFailed = false;
         if (pending.NeedFull && fullUrl != null)
         {
-            if (!source.ContainsKey("full") && IsValidPng(fullPath) && TryValidateUrl(fullUrl, out _))
+            try
             {
-                source["full"] = fullUrl;
-                changed = true;
+                fullDownloaded = await DownloadAsync(fullUrl, fullPath, cancellationToken).ConfigureAwait(false);
+                fullFailed = !fullDownloaded;
             }
-            else
+            catch (OperationCanceledException)
             {
-                try
-                {
-                    fullDownloaded = await DownloadAsync(fullUrl, fullPath, cancellationToken).ConfigureAwait(false);
-                    fullFailed = !fullDownloaded;
-                }
-                catch (OperationCanceledException)
-                {
-                    throw;
-                }
-                catch (Exception)
-                {
-                    fullFailed = true;
-                }
+                throw;
+            }
+            catch (Exception)
+            {
+                fullFailed = true;
             }
         }
+
+        // Отмена после загрузки не должна писать provenance: следующая пачка
+        // или snapshot.py сами разберутся с файлом.
+        cancellationToken.ThrowIfCancellationRequested();
 
         changed |= UpdateSourceEntry(source, "icon", iconPath, iconUrl, iconDownloaded, iconFailed);
         changed |= UpdateSourceEntry(source, "full", fullPath, fullUrl, fullDownloaded, fullFailed);
@@ -312,6 +300,14 @@ public static class OperatorArtCache
             using var response = await Http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
+            // HttpClient следует redirect'ам; проверяем конечный адрес, чтобы
+            // обещание «только https + skport.com» не обходилось редиректом.
+            if (response.RequestMessage?.RequestUri is { } finalUri &&
+                !TryValidateUrl(finalUri.ToString(), out _))
+            {
+                throw new InvalidDataException("unexpected redirect");
+            }
+
             await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
             await using (var target = File.Create(temporary))
             {
@@ -324,6 +320,7 @@ public static class OperatorArtCache
             if (!IsValidPng(temporary))
                 throw new InvalidDataException("not a PNG");
 
+            cancellationToken.ThrowIfCancellationRequested();
             File.Move(temporary, targetPath, true);
             return File.Exists(targetPath) && IsValidPng(targetPath);
         }
@@ -338,13 +335,28 @@ public static class OperatorArtCache
     {
         try
         {
-            if (new FileInfo(path).Length < PngSignature.Length) return false;
+            // Не только 8-байтовая сигнатура: обрезанный файл с одной
+            // сигнатурой раньше считался валидным и закреплял provenance.
+            // Требуем минимальную длину, первый чанк IHDR и финальный IEND.
+            var minimum = PngSignature.Length + PngHeader.Length + PngEnd.Length;
+            if (new FileInfo(path).Length < minimum) return false;
+
             using var stream = File.OpenRead(path);
             var signature = new byte[PngSignature.Length];
-            return stream.Read(signature, 0, signature.Length) == signature.Length &&
-                   signature.AsSpan().SequenceEqual(PngSignature);
+            stream.ReadExactly(signature);
+            if (!signature.AsSpan().SequenceEqual(PngSignature)) return false;
+
+            var header = new byte[PngHeader.Length];
+            stream.ReadExactly(header);
+            if (!header.AsSpan().SequenceEqual(PngHeader)) return false;
+
+            stream.Seek(-PngEnd.Length, SeekOrigin.End);
+            var end = new byte[PngEnd.Length];
+            stream.ReadExactly(end);
+            return end.AsSpan().SequenceEqual(PngEnd);
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or EndOfStreamException)
         {
             return false;
         }

@@ -104,10 +104,12 @@ Viewing, filters, charts and diff work fully offline.
 
 ## Key and privacy
 
-- The Skport key is entered in the app and stored only in
-  `.secrets/endfield_token.txt`.
-- The app does not send the key anywhere and does not write it to logs.
-- Only `snapshot.py` reads the key and passes it directly to the Skport API.
+- The Skport key is entered in the app and stored in `.secrets/` — the active
+  file is one of `endfield_token`, `endfield_token.txt`, `token`, `token.txt`
+  (`SECURITY.md` lists the order).
+- The app never sends the key anywhere or writes it to logs. Only
+  `snapshot.py` passes it to the Skport API; `TokenService` only checks that
+  the active file is non-empty.
 - `data/aef.db`, `data/snapshots/` and `.secrets/` are not committed.
 - No cloud, no accounts, no analytics. Network is used only for explicit
   snapshots and, if enabled, operator-art downloads.
