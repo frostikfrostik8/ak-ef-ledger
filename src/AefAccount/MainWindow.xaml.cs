@@ -32,6 +32,7 @@ public partial class MainWindow : Window
         LocalizationService.Instance.LanguageChanged += OnLanguageChanged;
         Closed += (_, _) =>
         {
+            ViewModel.Shutdown();
             LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
             _tokenWatcher?.Dispose();
         };

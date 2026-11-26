@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Text.Json;
+using System.Windows.Media;
 using AefAccount.Localization;
 using AefAccount.Services;
 
@@ -168,7 +169,7 @@ public sealed class SnapshotData
     public int PlatedCount => Achievements.Count(item => item.IsPlated);
 }
 
-public sealed class OperatorModel
+public sealed class OperatorModel : INotifyPropertyChanged
 {
     public string Name { get; init; } = "";
     public string? CharId { get; init; }
@@ -194,6 +195,8 @@ public sealed class OperatorModel
     public int? WeaponBreakthrough { get; init; }
     public string? WeaponGem { get; init; }
 
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     public string Initial => string.IsNullOrWhiteSpace(Name) ? "?" : Name.TrimStart('"', '“', '”').FirstOrDefault().ToString().ToUpperInvariant();
     public string DisplayName => LocalizationService.Instance.CurrentLanguage.StartsWith("ru", StringComparison.OrdinalIgnoreCase)
         ? OperatorArt.RuName(Name)
@@ -201,6 +204,27 @@ public sealed class OperatorModel
     public string EnglishName => OperatorArt.EnglishName(Name);
     public string? ArtSlug => OperatorArt.Slug(Name, CharId);
     public bool HasLocalArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Portrait);
+
+    // Картинки вынесены в свойства, чтобы после фоновой загрузки арта
+    // уведомить уже созданные карточки/окно оператора без пересоздания вида.
+    public ImageSource? ArtPortrait => OperatorArt.Load(Name, CharId, OperatorArtKind.Portrait);
+    public ImageSource? ArtIcon => OperatorArt.Load(Name, CharId, OperatorArtKind.Icon);
+    public ImageSource? ArtFull => OperatorArt.Load(Name, CharId, OperatorArtKind.Full);
+    public bool HasPortraitArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Portrait);
+    public bool HasIconArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Icon);
+    public bool HasFullArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Full);
+
+    public void RefreshArt()
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ArtPortrait)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ArtIcon)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ArtFull)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasPortraitArt)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasIconArt)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasFullArt)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocalArt)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ArtSlug)));
+    }
     public string RarityStars => new('★', Math.Clamp(Rarity ?? 0, 0, 6));
     public string ElementHex => ColorPalette.Element(Element);
     public string ElementTintHex => ColorPalette.ElementTint(Element);

@@ -5,6 +5,9 @@ using AefAccount.Models;
 
 namespace AefAccount.Services;
 
+/// <summary>Что именно нужно догрузить для оператора.</summary>
+public sealed record PendingArt(OperatorModel Operator, bool NeedIcon, bool NeedFull);
+
 /// <summary>
 /// Локальный кэш артов из API. Сначала проверяет локальный арт-пак и уже
 /// скачанный кэш; если арта нет — скачивает avatar/illustration по URL из
@@ -13,6 +16,7 @@ namespace AefAccount.Services;
 public static class OperatorArtCache
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
+    private static readonly byte[] PngSignature = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
 
     private static string? _root;
 
@@ -30,32 +34,75 @@ public static class OperatorArtCache
     }
 
     /// <summary>
-    /// Догружает отсутствующие арты для операторов. Ошибки сети не являются
-    /// ошибкой приложения: карточка просто останется с буквой.
+    /// Считает очередь на UI-потоке: <see cref="OperatorArt"/> использует
+    /// обычные словари, которые нельзя читать из фонового потока.
     /// </summary>
-    public static async Task EnsureAsync(IEnumerable<OperatorModel> operators, CancellationToken cancellationToken = default)
+    public static IReadOnlyList<PendingArt> CollectPending(IEnumerable<OperatorModel> operators)
     {
-        if (string.IsNullOrWhiteSpace(_root)) return;
+        if (string.IsNullOrWhiteSpace(_root)) return [];
 
-        var pending = operators
-            .Where(op => !string.IsNullOrWhiteSpace(op.CharId))
-            .Where(op => !OperatorArt.Has(op.Name, op.CharId, OperatorArtKind.Portrait))
-            .GroupBy(op => op.CharId!, StringComparer.OrdinalIgnoreCase)
+        var result = new List<PendingArt>();
+        foreach (var op in operators)
+        {
+            var charId = op.CharId?.Trim();
+            if (!IsSafeFolder(charId)) continue;
+
+            // Курируемый пак важнее API-кэша: если в нём есть хоть какой-то
+            // арт, отдельные icon/full из API не догружаем.
+            if (OperatorArt.HasArtPackArt(op.Name, charId, OperatorArtKind.Portrait)) continue;
+
+            var iconUrl = string.IsNullOrWhiteSpace(op.AvatarUrl) ? null : op.AvatarUrl.Trim();
+            var fullUrl = string.IsNullOrWhiteSpace(op.IllustrationUrl)
+                ? iconUrl
+                : op.IllustrationUrl.Trim();
+            var folder = Path.Combine(_root, charId!);
+
+            // Нужно не только «файла нет», но и «файл не подтверждён URL».
+            // Это лечит старые/ложные source.json и битые PNG в фоне.
+            var needIcon = iconUrl != null &&
+                           (!OperatorArt.HasExact(op.Name, op.CharId, OperatorArtKind.Icon) ||
+                            !IsSourceCurrent(folder, "icon", iconUrl));
+            var needFull = fullUrl != null &&
+                           (!OperatorArt.HasExact(op.Name, op.CharId, OperatorArtKind.Full) ||
+                            !IsSourceCurrent(folder, "full", fullUrl));
+
+            if (needIcon || needFull) result.Add(new PendingArt(op, needIcon, needFull));
+        }
+
+        return result
+            .GroupBy(item => item.Operator.CharId!, StringComparer.OrdinalIgnoreCase)
             .Select(group => group.First())
             .ToList();
-        if (pending.Count == 0) return;
+    }
+
+    /// <summary>
+    /// Догружает отсутствующие арты. Вызывать из фонового потока; очередь
+    /// должна быть получена через <see cref="CollectPending"/> на UI-потоке.
+    /// Ошибки сети не являются ошибкой приложения.
+    /// </summary>
+    public static async Task EnsureAsync(IReadOnlyList<PendingArt> pending, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(_root) || pending.Count == 0) return;
 
         using var gate = new SemaphoreSlim(4);
-        var tasks = pending.Select(async op =>
+        var tasks = pending.Select(async item =>
         {
-            await gate.WaitAsync(cancellationToken);
             try
             {
-                await EnsureOneAsync(op, cancellationToken);
+                await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
-                // Не отменяем остальные загрузки из-за одной карточки.
+                return;
+            }
+
+            try
+            {
+                await EnsureOneAsync(item, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                // Отмена — штатный путь при смене снимка/закрытии.
             }
             catch (Exception)
             {
@@ -66,40 +113,150 @@ public static class OperatorArtCache
                 gate.Release();
             }
         });
-        await Task.WhenAll(tasks);
+
+        await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private static async Task EnsureOneAsync(OperatorModel op, CancellationToken cancellationToken)
+    private static async Task EnsureOneAsync(PendingArt pending, CancellationToken cancellationToken)
     {
-        var charId = op.CharId!.Trim();
-        if (charId is "." or ".." || charId.IndexOfAny(['/', '\\']) >= 0) return;
+        var op = pending.Operator;
+        var charId = op.CharId?.Trim();
+        if (!IsSafeFolder(charId)) return;
 
-        var folder = Path.Combine(_root!, charId);
+        var folder = Path.Combine(_root!, charId!);
         var iconPath = Path.Combine(folder, "icon.png");
         var fullPath = Path.Combine(folder, "full.png");
+        var iconUrl = string.IsNullOrWhiteSpace(op.AvatarUrl) ? null : op.AvatarUrl.Trim();
+        var fullUrl = string.IsNullOrWhiteSpace(op.IllustrationUrl) ? iconUrl : op.IllustrationUrl.Trim();
 
-        if (!File.Exists(iconPath))
+        var source = ReadSource(folder);
+        var changed = false;
+
+        var iconDownloaded = false;
+        var iconFailed = false;
+        if (pending.NeedIcon && iconUrl != null)
         {
-            try { await DownloadAsync(op.AvatarUrl, iconPath, cancellationToken); }
-            catch (Exception exception) when (exception is not OperationCanceledException) { }
-        }
-        if (!File.Exists(fullPath))
-        {
-            try { await DownloadAsync(op.IllustrationUrl ?? op.AvatarUrl, fullPath, cancellationToken); }
-            catch (Exception exception) when (exception is not OperationCanceledException) { }
+            try
+            {
+                await DownloadAsync(iconUrl, iconPath, cancellationToken).ConfigureAwait(false);
+                iconDownloaded = true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                iconFailed = true;
+            }
         }
 
-        var source = new Dictionary<string, string>();
-        if (File.Exists(iconPath) && !string.IsNullOrWhiteSpace(op.AvatarUrl))
-            source["icon"] = op.AvatarUrl;
-        if (File.Exists(fullPath) && !string.IsNullOrWhiteSpace(op.IllustrationUrl))
-            source["full"] = op.IllustrationUrl;
-        if (source.Count > 0)
+        var fullDownloaded = false;
+        var fullFailed = false;
+        if (pending.NeedFull && fullUrl != null)
         {
-            var sourcePath = Path.Combine(folder, "source.json");
-            var temporary = sourcePath + ".tmp";
-            File.WriteAllText(temporary, JsonSerializer.Serialize(source, new JsonSerializerOptions { WriteIndented = true }));
-            File.Move(temporary, sourcePath, true);
+            try
+            {
+                await DownloadAsync(fullUrl, fullPath, cancellationToken).ConfigureAwait(false);
+                fullDownloaded = true;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                fullFailed = true;
+            }
+        }
+
+        changed |= UpdateSourceEntry(source, "icon", iconPath, iconUrl, iconDownloaded, iconFailed);
+        changed |= UpdateSourceEntry(source, "full", fullPath, fullUrl, fullDownloaded, fullFailed);
+
+        if (changed) WriteSource(folder, source);
+    }
+
+    private static bool UpdateSourceEntry(
+        Dictionary<string, string> source,
+        string kind,
+        string path,
+        string? url,
+        bool downloaded,
+        bool failed)
+    {
+        var had = source.TryGetValue(kind, out var old);
+
+        if (downloaded && url != null)
+        {
+            if (had && old == url) return false;
+            source[kind] = url;
+            return true;
+        }
+
+        // Загрузка упала, но старый файл и его provenance целы — не врём,
+        // что файл соответствует новому URL. snapshot.py сам обновит его.
+        if (failed && had && File.Exists(path) && IsValidPng(path)) return false;
+
+        // Файл уже есть, source совпадает с URL и PNG валиден — подтверждено.
+        if (!string.IsNullOrWhiteSpace(url) && had && old == url &&
+            File.Exists(path) && IsValidPng(path)) return false;
+
+        // Провенанс неизвестен или устарел: запись убираем, файл не трогаем.
+        // Тогда snapshot.py увидит расхождение и перекачает файл.
+        if (had)
+        {
+            source.Remove(kind);
+            return true;
+        }
+
+        return false;
+    }
+
+    private static bool IsSourceCurrent(string folder, string kind, string url)
+    {
+        var path = Path.Combine(folder, kind + ".png");
+        if (!File.Exists(path) || !IsValidPng(path)) return false;
+
+        var source = ReadSource(folder);
+        return source.TryGetValue(kind, out var recorded) &&
+               recorded.Equals(url, StringComparison.Ordinal);
+    }
+
+    private static Dictionary<string, string> ReadSource(string folder)
+    {
+        var path = Path.Combine(folder, "source.json");
+        if (!File.Exists(path)) return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path));
+            return data is null
+                ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(data, StringComparer.OrdinalIgnoreCase);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+        {
+            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        }
+    }
+
+    private static void WriteSource(string folder, Dictionary<string, string> source)
+    {
+        var path = Path.Combine(folder, "source.json");
+        var temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            Directory.CreateDirectory(folder);
+            var json = JsonSerializer.Serialize(source, new JsonSerializerOptions { WriteIndented = true });
+            if (File.Exists(path) && File.ReadAllText(path) == json) return;
+
+            File.WriteAllText(temporary, json);
+            File.Move(temporary, path, true);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            TryDelete(temporary);
+            // source.json не критичен: при следующем запуске всё пересчитается.
         }
     }
 
@@ -111,30 +268,23 @@ public static class OperatorArtCache
         if (string.IsNullOrWhiteSpace(folder)) return;
         Directory.CreateDirectory(folder);
 
-        var temporary = targetPath + ".tmp";
+        var temporary = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            using var response = await Http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var response = await Http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
 
-            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken))
+            await using (var source = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
             await using (var target = File.Create(temporary))
             {
-                await source.CopyToAsync(target, cancellationToken);
+                await source.CopyToAsync(target, cancellationToken).ConfigureAwait(false);
             }
 
             if (new FileInfo(temporary).Length == 0)
                 throw new InvalidDataException("empty image");
 
-            using (var stream = File.OpenRead(temporary))
-            {
-                var signature = new byte[8];
-                if (stream.Read(signature, 0, signature.Length) != signature.Length ||
-                    !signature.AsSpan().SequenceEqual(new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }))
-                {
-                    throw new InvalidDataException("not a PNG");
-                }
-            }
+            if (!IsValidPng(temporary))
+                throw new InvalidDataException("not a PNG");
 
             File.Move(temporary, targetPath, true);
         }
@@ -144,6 +294,28 @@ public static class OperatorArtCache
             throw;
         }
     }
+
+    private static bool IsValidPng(string path)
+    {
+        try
+        {
+            if (new FileInfo(path).Length < PngSignature.Length) return false;
+            using var stream = File.OpenRead(path);
+            var signature = new byte[PngSignature.Length];
+            return stream.Read(signature, 0, signature.Length) == signature.Length &&
+                   signature.AsSpan().SequenceEqual(PngSignature);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+    }
+
+    private static bool IsSafeFolder(string? value) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        value.Length <= 128 &&
+        value != "." && value != ".." &&
+        value.IndexOfAny(['/', '\\']) < 0;
 
     private static bool TryValidateUrl(string? value, out Uri uri)
     {

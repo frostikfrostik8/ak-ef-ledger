@@ -62,30 +62,41 @@ public sealed class AsyncRelayCommand<T> : ICommand
 {
     private readonly Func<T?, Task> _execute;
     private readonly Func<T?, bool>? _canExecute;
+    private readonly bool _allowConcurrent;
     private bool _running;
 
-    public AsyncRelayCommand(Func<T?, Task> execute, Func<T?, bool>? canExecute = null)
+    public AsyncRelayCommand(Func<T?, Task> execute, Func<T?, bool>? canExecute = null, bool allowConcurrent = false)
     {
         _execute = execute;
         _canExecute = canExecute;
+        _allowConcurrent = allowConcurrent;
     }
 
     public event EventHandler? CanExecuteChanged;
-    public bool CanExecute(object? parameter) => !_running && (_canExecute?.Invoke((T?)parameter) ?? true);
+    public bool CanExecute(object? parameter) =>
+        (_allowConcurrent || !_running) && (_canExecute?.Invoke((T?)parameter) ?? true);
 
     public async void Execute(object? parameter)
     {
         if (!CanExecute(parameter)) return;
-        _running = true;
-        RaiseCanExecuteChanged();
+
+        if (!_allowConcurrent)
+        {
+            _running = true;
+            RaiseCanExecuteChanged();
+        }
+
         try
         {
             await _execute((T?)parameter);
         }
         finally
         {
-            _running = false;
-            RaiseCanExecuteChanged();
+            if (!_allowConcurrent)
+            {
+                _running = false;
+                RaiseCanExecuteChanged();
+            }
         }
     }
 

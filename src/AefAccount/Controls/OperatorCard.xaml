@@ -39,8 +39,8 @@
                 <TextBlock Text="{Binding Initial}" FontFamily="{StaticResource Font.Display}"
                            FontSize="36" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text.Faint}"
                            HorizontalAlignment="Center" VerticalAlignment="Center"
-                           Visibility="{Binding Converter={StaticResource OperatorArtVisibility}, ConverterParameter=portrait}"/>
-                <Image Source="{Binding Converter={StaticResource OperatorArt}, ConverterParameter=portrait}"
+                           Visibility="{Binding HasPortraitArt, Converter={StaticResource InverseBoolToVisibility}}"/>
+                <Image Source="{Binding ArtPortrait}"
                        Stretch="UniformToFill" VerticalAlignment="Top"
                        RenderOptions.BitmapScalingMode="HighQuality"
                        SnapsToDevicePixels="True">

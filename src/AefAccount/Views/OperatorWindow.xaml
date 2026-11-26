@@ -85,8 +85,8 @@
                                        FontSize="10" FontWeight="SemiBold"
                                        Foreground="{DynamicResource Brush.Text.Muted}"
                                        HorizontalAlignment="Center" VerticalAlignment="Center"
-                                       Visibility="{Binding Converter={StaticResource OperatorArtVisibility}, ConverterParameter=icon}"/>
-                            <Image Source="{Binding Converter={StaticResource OperatorArt}, ConverterParameter=icon}"
+                                       Visibility="{Binding HasIconArt, Converter={StaticResource InverseBoolToVisibility}}"/>
+                            <Image Source="{Binding ArtIcon}"
                                    Stretch="UniformToFill"/>
                         </Grid>
                     </Border>
@@ -165,8 +165,8 @@
                                                    FontSize="64" FontWeight="SemiBold"
                                                    Foreground="{DynamicResource Brush.Paper.Faint}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center"
-                                                   Visibility="{Binding Converter={StaticResource OperatorArtVisibility}, ConverterParameter=full}"/>
-                                        <Image Source="{Binding Converter={StaticResource OperatorArt}, ConverterParameter=full}"
+                                                   Visibility="{Binding HasFullArt, Converter={StaticResource InverseBoolToVisibility}}"/>
+                                        <Image Source="{Binding ArtFull}"
                                                Stretch="Uniform" Margin="12"
                                                RenderOptions.BitmapScalingMode="HighQuality"/>
                                         <Border Width="26" Height="26" Background="#B3000000"

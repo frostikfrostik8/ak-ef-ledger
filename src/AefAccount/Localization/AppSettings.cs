@@ -12,6 +12,7 @@ internal static class AppSettings
 {
     private const string LanguageKey = "language";
     private const string ArtDirectoryKey = "artDir";
+    private const string AutoArtKey = "autoArtDownload";
 
     private static string FilePath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
@@ -25,6 +26,13 @@ internal static class AppSettings
     public static string? LoadArtDirectory() => Read(ArtDirectoryKey);
 
     public static void SaveArtDirectory(string? path) => Write(ArtDirectoryKey, path);
+
+    /// <summary>По умолчанию выключено: приложение не ходит в сеть без согласия.</summary>
+    public static bool LoadAutoDownloadArt() =>
+        string.Equals(Read(AutoArtKey), "true", StringComparison.OrdinalIgnoreCase);
+
+    public static void SaveAutoDownloadArt(bool value) =>
+        Write(AutoArtKey, value ? "true" : null);
 
     private static string? Read(string key)
     {

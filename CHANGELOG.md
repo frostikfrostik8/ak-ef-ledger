@@ -1,5 +1,30 @@
 # Changelog
 
+## v0.4.4 - art loading and snapshot switching (2026-11-27)
+
+- Opening a snapshot no longer waits for operator art downloads: the
+  snapshot is shown immediately. Missing art is fetched in the background
+  only after explicit consent.
+- Automatic art download is now **opt-in and off by default** (Settings →
+  Operator art). The app does not contact `static.skport.com` on its own until
+  the toggle is enabled.
+- Switching snapshots no longer covers the content with the modal busy
+  overlay; the header ComboBox stays usable.
+- Rapid snapshot switching keeps the last selection (generation + cancellation,
+  latest-wins); the header ComboBox and timeline buttons no longer lose clicks.
+- `IsBusy` is now ref-counted, so one operation cannot clear the busy overlay
+  of another.
+- Background art updates already rendered roster cards and an open operator
+  window (targeted `INotifyPropertyChanged` + `RefreshArt`).
+- Art cache checks each kind separately (`icon`/`full`), validates PNG files,
+  writes `source.json` only for confirmed files and uses unique temporary names.
+  A corrupt/unknown cache file is refreshed instead of freezing old art.
+- `source.json` is healed when the API URL changes; failed downloads keep the
+  old file and provenance.
+- Corrupt PNG files fall back to the letter instead of throwing during render.
+- Art pack install/remove refreshes visible cards, not only the status line.
+- No database schema changes; existing snapshots remain compatible.
+
 ## v0.4.3 - operator art cache (2026-11-25)
 
 - Operator art is resolved by `char_id` first, then by manifest aliases and

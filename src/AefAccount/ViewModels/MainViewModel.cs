@@ -20,7 +20,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private SnapshotData? _data;
     private bool _suppressSelection;
     private bool _suppressCompare;
-    private bool _loading;
+    private int _loadGeneration;
+    private CancellationTokenSource? _artCts;
+    private bool _artFetching;
+    private bool _autoDownloadArt;
+    private int _busyScopes;
     private bool _refreshing;
     private bool _compareLoading;
     private bool _isBusy;
@@ -91,7 +95,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
         RefreshCommand = new AsyncRelayCommand(() => RefreshAsync(false));
         TakeSnapshotCommand = new AsyncRelayCommand(TakeSnapshotAsync);
-        SelectSnapshotCommand = new AsyncRelayCommand<SnapshotSummary>(snapshot => SelectSnapshotAsync(snapshot?.Id));
+        SelectSnapshotCommand = new AsyncRelayCommand<SnapshotSummary>(
+            snapshot => SelectSnapshotAsync(snapshot?.Id), allowConcurrent: true);
         OpenSnapshotCommand = new AsyncRelayCommand<SnapshotSummary>(snapshot => OpenSnapshotAsync(snapshot));
         ClearStatusCommand = new RelayCommand(() => StatusMessage = "");
         AddTestOperatorCommand = new RelayCommand(AddTestOperator);
@@ -101,6 +106,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         ReloadLanguagesCommand = new RelayCommand(ReloadLanguages);
         OpenSettingsCommand = new RelayCommand(() => RequestNavigate("settings"));
         _artStatus = ArtPack.Status;
+        _autoDownloadArt = AppSettings.LoadAutoDownloadArt();
 
         Metrics =
         [
@@ -196,6 +202,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
                 OnPropertyChanged(nameof(HasDiffChanges));
                 OnPropertyChanged(nameof(OverviewDiffLines));
                 OnPropertyChanged(nameof(DiffEmptyText));
+                OnPropertyChanged(nameof(ShowArtBanner));
             }
         }
     }
@@ -241,7 +248,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(SelectedSnapshotId));
             if (!_suppressSelection && value != null)
             {
-                _ = LoadSnapshotAsync(value.Id);
+                // Переключение снимка не должно накрывать контент модальным
+                // оверлеем: DB-чтение короткое, а выбор должен оставаться живым.
+                _ = LoadSnapshotAsync(value.Id, manageBusy: false);
             }
         }
     }
@@ -329,7 +338,33 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     public bool CanRemoveArtNow => CanUseArt && CanRemoveArtPack;
 
-    public bool ShowArtBanner => !HasArtPack && !OperatorArt.HasApiCache && (Data?.Operators.Count ?? 0) > 0;
+    public bool ShowArtBanner =>
+        !HasArtPack && !OperatorArt.HasApiCache && !_artFetching && (Data?.Operators.Count ?? 0) > 0;
+
+    /// <summary>
+    /// Явное согласие на сетевую догрузку артов. По умолчанию выключено:
+    /// приложение не должно молча ходить на static.skport.com.
+    /// </summary>
+    public bool AutoDownloadArt
+    {
+        get => _autoDownloadArt;
+        set
+        {
+            if (!Set(ref _autoDownloadArt, value)) return;
+            AppSettings.SaveAutoDownloadArt(value);
+
+            if (value && Data?.Operators is { Count: > 0 } operators)
+            {
+                StartArtFetch(operators, _loadGeneration);
+            }
+            else if (!value)
+            {
+                CancelArtFetch();
+            }
+
+            OnPropertyChanged(nameof(ShowArtBanner));
+        }
+    }
 
     public bool IsArtBusy
     {
@@ -355,12 +390,25 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         _artStatus = ArtPack.Refresh();
         OperatorArt.Initialize();
+        if (Data?.Operators is { } operators)
+        {
+            foreach (var op in operators) op.RefreshArt();
+        }
         OnPropertyChanged(nameof(ArtStatusText));
         OnPropertyChanged(nameof(ArtPathText));
         OnPropertyChanged(nameof(HasArtPack));
         OnPropertyChanged(nameof(CanRemoveArtPack));
         OnPropertyChanged(nameof(CanRemoveArtNow));
         OnPropertyChanged(nameof(ShowArtBanner));
+    }
+
+    /// <summary>Отменить фоновую загрузку арта при закрытии/смене профиля.</summary>
+    public void CancelArtFetch() => _artCts?.Cancel();
+
+    public void Shutdown()
+    {
+        CancelArtFetch();
+        _loadGeneration++;
     }
 
     public void SetSettingsStatus(string message, bool error = false)
@@ -403,6 +451,23 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         get => _isBusy;
         private set => Set(ref _isBusy, value);
+    }
+
+    private void EnterBusy(string text)
+    {
+        if (_busyScopes == 0)
+        {
+            BusyText = text;
+            IsBusy = true;
+        }
+        _busyScopes++;
+    }
+
+    private void LeaveBusy()
+    {
+        if (_busyScopes == 0) return;
+        _busyScopes--;
+        if (_busyScopes == 0) IsBusy = false;
     }
 
     public string BusyText
@@ -581,8 +646,13 @@ public sealed class MainViewModel : INotifyPropertyChanged
         _devData.Clear();
         _devProfile = null;
         _refreshing = true;
-        IsBusy = true;
-        BusyText = L.T("status_reading_snapshots");
+
+        // Новый refresh важнее любой незавершённой загрузки/догрузки арта.
+        CancelArtFetch();
+        _loadGeneration++;
+        var generationAtStart = _loadGeneration;
+
+        EnterBusy(L.T("status_reading_snapshots"));
         try
         {
             var meta = await Task.Run(_dataService.LoadMeta);
@@ -592,16 +662,33 @@ public sealed class MainViewModel : INotifyPropertyChanged
             foreach (var item in snapshots.OrderByDescending(item => item.Id)) Snapshots.Add(item);
             OnPropertyChanged(nameof(Snapshots));
             OnPropertyChanged(nameof(FirstSnapshot));
+
             var preferredId = selectLatest ? meta.Latest?.Id : SelectedSnapshot?.Id ?? meta.Latest?.Id;
             var target = Snapshots.FirstOrDefault(item => item.Id == preferredId) ?? Snapshots.FirstOrDefault();
             if (target == null)
             {
+                CancelArtFetch();
                 SelectSnapshotSilently(null);
                 Data = null;
+                Chart = null;
+                CompareDiff = null;
+                CompareHint = "";
+                ApplyRosterFilters();
+                ApplyAchievementFilters();
                 StatusIsError = true;
                 StatusMessage = L.T("status_no_snapshots");
                 return;
             }
+
+            // Пользователь выбрал снимок, пока читались meta/snapshots:
+            // не перетираем его выбор и не запускаем вторую загрузку.
+            if (generationAtStart != _loadGeneration)
+            {
+                if (Snapshots.FirstOrDefault(item => item.Id == SelectedSnapshot?.Id) is { } keep)
+                    SelectSnapshotSilently(keep);
+                return;
+            }
+
             SelectSnapshotSilently(target);
             await LoadSnapshotAsync(target.Id, false);
         }
@@ -612,7 +699,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         finally
         {
-            IsBusy = false;
+            LeaveBusy();
             _refreshing = false;
             UpdateFreshness();
         }
@@ -625,7 +712,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         if (target == null) return;
         if (SelectedSnapshot?.Id == target.Id && Data?.Snapshot.Id == target.Id) return;
         SelectSnapshotSilently(target);
-        await LoadSnapshotAsync(target.Id);
+        await LoadSnapshotAsync(target.Id, manageBusy: false);
     }
 
     public async Task OpenSnapshotAsync(SnapshotSummary? snapshot)
@@ -649,46 +736,112 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        if (_loading) return;
-        _loading = true;
-        if (manageBusy)
-        {
-            IsBusy = true;
-            BusyText = L.T("status_loading_snapshot");
-        }
+        var generation = ++_loadGeneration;
+        CancelArtFetch();
+        if (manageBusy) EnterBusy(L.T("status_loading_snapshot"));
+
         try
         {
             var data = await Task.Run(() => _dataService.LoadSnapshot(snapshotId));
+            if (generation != _loadGeneration) return;
 
-            // Сначала локальный арт-пак/кэш; отсутствующие арты догружаем
-            // асинхронно из официальных URL снимка до отрисовки карточек.
-            try
-            {
-                await OperatorArtCache.EnsureAsync(data.Operators);
-            }
-            catch (Exception)
-            {
-                // Сеть/URL не должны мешать показать ростер.
-            }
+            // Сбрасываем Paths/Cache до создания карточек: файлы, уже лежащие
+            // в арт-паке/кэше, должны находиться без ожидания сети.
             OperatorArt.Initialize();
 
             Data = data;
             var summary = Snapshots.FirstOrDefault(item => item.Id == snapshotId);
             if (summary != null && SelectedSnapshot?.Id != snapshotId) SelectSnapshotSilently(summary);
+
+            // Снимок уже показан. Арт догружаем фоном и обновляем карточки,
+            // когда файлы реально появятся.
+            StartArtFetch(data.Operators, generation);
             ApplyData(data);
             StatusIsError = false;
             StatusMessage = "";
         }
         catch (Exception exception)
         {
+            if (generation != _loadGeneration) return;
             StatusIsError = true;
             StatusMessage = exception.Message;
+            RevertSelectionToShownData();
         }
         finally
         {
-            _loading = false;
-            if (manageBusy) IsBusy = false;
-            UpdateFreshness();
+            if (manageBusy) LeaveBusy();
+            if (generation == _loadGeneration) UpdateFreshness();
+        }
+    }
+
+    private void RevertSelectionToShownData()
+    {
+        if (Data?.Snapshot.Id is not int shownId) return;
+        var summary = Snapshots.FirstOrDefault(item => item.Id == shownId);
+        if (summary != null) SelectSnapshotSilently(summary);
+    }
+
+    private void StartArtFetch(IReadOnlyList<OperatorModel> operators, int generation)
+    {
+        if (!_autoDownloadArt)
+        {
+            OnPropertyChanged(nameof(ShowArtBanner));
+            return;
+        }
+
+        // OperatorArt использует обычные словари; очередь считаем на UI-потоке.
+        var pending = OperatorArtCache.CollectPending(operators);
+        var cts = new CancellationTokenSource();
+        _artCts = cts;
+        _artFetching = true;
+        OnPropertyChanged(nameof(ShowArtBanner));
+        _ = FetchArtAsync(operators, pending, generation, cts);
+    }
+
+    private async Task FetchArtAsync(
+        IReadOnlyList<OperatorModel> operators,
+        IReadOnlyList<PendingArt> pending,
+        int generation,
+        CancellationTokenSource cts)
+    {
+        var completed = false;
+        try
+        {
+            // Task.Run уводит файловый I/O и HTTP с UI-контекста.
+            await Task.Run(() => OperatorArtCache.EnsureAsync(pending, cts.Token), cts.Token);
+            completed = !cts.IsCancellationRequested;
+        }
+        catch (OperationCanceledException)
+        {
+            // Штатная отмена при смене снимка/закрытии.
+        }
+        catch (Exception)
+        {
+            // Сеть/файлы не должны мешать уже показанному снимку.
+        }
+        finally
+        {
+            if (ReferenceEquals(_artCts, cts))
+            {
+                _artCts = null;
+                _artFetching = false;
+                OnPropertyChanged(nameof(ShowArtBanner));
+            }
+            cts.Dispose();
+        }
+
+        if (!completed || generation != _loadGeneration) return;
+
+        // Продолжение после await Task.Run возвращается в UI-контекст.
+        try
+        {
+            OperatorArt.Initialize();
+            foreach (var op in operators) op.RefreshArt();
+            OnPropertyChanged(nameof(ShowArtBanner));
+        }
+        catch (Exception)
+        {
+            // Не уведомили карточки — не критично; они обновятся при смене страницы.
         }
     }
 
@@ -914,6 +1067,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private void LoadDevSnapshot(int snapshotId)
     {
         if (!_devData.TryGetValue(snapshotId, out var data)) return;
+
+        // DEV-данные применяются синхронно и важнее незавершённой реальной
+        // загрузки: инвалидируем generation и останавливаем фоновый арт.
+        CancelArtFetch();
+        _loadGeneration++;
+
         Data = data;
         var summary = Snapshots.FirstOrDefault(item => item.Id == snapshotId);
         if (summary != null) SelectSnapshotSilently(summary);
@@ -1052,11 +1211,11 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private async Task ReloadForLanguageAsync()
     {
-        if (Data == null) return;
+        if (Data == null && SelectedSnapshot == null) return;
 
         if (_useDevProfile)
         {
-            var selectedId = Data.Snapshot.Id;
+            var selectedId = SelectedSnapshot?.Id ?? Data!.Snapshot.Id;
             LoadDevProfile(navigate: false);
             var target = _devProfile?.Snapshots.FirstOrDefault(item => item.Id == selectedId);
             if (target != null)
@@ -1067,7 +1226,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
-        await LoadSnapshotAsync(Data.Snapshot.Id, false);
+        await LoadSnapshotAsync(SelectedSnapshot?.Id ?? Data!.Snapshot.Id, false);
     }
 
     private async Task TakeSnapshotAsync()
@@ -1078,8 +1237,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             TokenRequired?.Invoke(this, EventArgs.Empty);
             return;
         }
-        IsBusy = true;
-        BusyText = L.T("status_taking_snapshot");
+        CancelArtFetch();
+        EnterBusy(L.T("status_taking_snapshot"));
         StatusIsError = false;
         StatusMessage = L.T("status_starting_snapshot");
         try
@@ -1106,7 +1265,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         }
         finally
         {
-            IsBusy = false;
+            LeaveBusy();
         }
     }
 

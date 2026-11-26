@@ -103,15 +103,23 @@ public static class OperatorArt
         HasApiCache = false;
         if (!string.IsNullOrWhiteSpace(_apiCacheRoot) && Directory.Exists(_apiCacheRoot))
         {
-            foreach (var directory in Directory.EnumerateDirectories(_apiCacheRoot))
+            try
             {
-                if (File.Exists(Path.Combine(directory, "icon.png")) ||
-                    File.Exists(Path.Combine(directory, "portrait.png")) ||
-                    File.Exists(Path.Combine(directory, "full.png")))
+                foreach (var directory in Directory.EnumerateDirectories(_apiCacheRoot))
                 {
-                    HasApiCache = true;
-                    break;
+                    if (File.Exists(Path.Combine(directory, "icon.png")) ||
+                        File.Exists(Path.Combine(directory, "portrait.png")) ||
+                        File.Exists(Path.Combine(directory, "full.png")))
+                    {
+                        HasApiCache = true;
+                        break;
+                    }
                 }
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                // Недоступная папка кэша не должна мешать запуску приложения.
+                HasApiCache = false;
             }
         }
     }
@@ -149,6 +157,46 @@ public static class OperatorArt
         var slug = identity?.Slug;
         if (ResolvePath(slug, charId, kind) != null) return true;
         return slug != null && slug.Equals(EmbeddedSlug, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Проверяет именно запрошенный файл (без fallback). Нужен фоновому кэшу:
+    /// если в API-кэше есть только icon, full всё равно надо догрузить.
+    /// </summary>
+    public static bool HasExact(string? name, string? charId, OperatorArtKind kind)
+    {
+        var identity = Resolve(name) ?? ResolveByCharId(charId);
+        var slug = identity?.Slug;
+        var id = NormalizeFolder(charId);
+        var file = FileName(kind) + ".png";
+
+        if (!string.IsNullOrWhiteSpace(_root) && Directory.Exists(_root))
+        {
+            if (IsSafeFolder(slug) && File.Exists(Path.Combine(_root, slug!, file))) return true;
+            if (IsSafeFolder(id) && File.Exists(Path.Combine(_root, id!, file))) return true;
+        }
+
+        if (!string.IsNullOrWhiteSpace(_apiCacheRoot) && IsSafeFolder(id) &&
+            File.Exists(Path.Combine(_apiCacheRoot, id!, file)))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>Есть ли у оператора хоть какой-то арт в курируемом паке.</summary>
+    public static bool HasArtPackArt(string? name, string? charId, OperatorArtKind kind)
+    {
+        if (string.IsNullOrWhiteSpace(_root) || !Directory.Exists(_root)) return false;
+
+        var identity = Resolve(name) ?? ResolveByCharId(charId);
+        var slug = identity?.Slug;
+        var id = NormalizeFolder(charId);
+
+        if (IsSafeFolder(slug) && FindInRoot(_root, slug!, kind, Fallbacks(kind)) != null) return true;
+        if (IsSafeFolder(id) && FindInRoot(_root, id!, kind, Fallbacks(kind)) != null) return true;
+        return false;
     }
 
     public static ImageSource? Load(string? name, OperatorArtKind kind) => Load(name, null, kind);
@@ -208,7 +256,8 @@ public static class OperatorArt
 
     private static string? ResolvePath(string? slug, string? charId, OperatorArtKind kind)
     {
-        var cacheKey = $"{slug ?? "-"}|{charId ?? "-"}|{kind}";
+        var normalizedCharId = NormalizeFolder(charId);
+        var cacheKey = $"{slug ?? "-"}|{normalizedCharId ?? "-"}|{kind}";
         if (Paths.TryGetValue(cacheKey, out var cached)) return cached;
 
         string? path = null;
@@ -216,17 +265,17 @@ public static class OperatorArt
         // 1. Curated local art pack: by slug, then by charId folder.
         if (!string.IsNullOrWhiteSpace(_root) && Directory.Exists(_root))
         {
-            if (!string.IsNullOrWhiteSpace(slug))
-                path = FindInRoot(_root, slug, kind);
-            if (path == null && !string.IsNullOrWhiteSpace(charId))
-                path = FindInRoot(_root, charId, kind);
+            if (IsSafeFolder(slug))
+                path = FindInRoot(_root, slug!, kind);
+            if (path == null && IsSafeFolder(normalizedCharId))
+                path = FindInRoot(_root, normalizedCharId!, kind);
         }
 
         // 2. API cache written by snapshot.py: data/art_cache/<char_id>/.
         if (path == null && !string.IsNullOrWhiteSpace(_apiCacheRoot) &&
-            !string.IsNullOrWhiteSpace(charId) && Directory.Exists(_apiCacheRoot))
+            IsSafeFolder(normalizedCharId) && Directory.Exists(_apiCacheRoot))
         {
-            path = FindInRoot(_apiCacheRoot, charId, kind, CacheFallbacks(kind));
+            path = FindInRoot(_apiCacheRoot, normalizedCharId!, kind, CacheFallbacks(kind));
         }
 
         Paths[cacheKey] = path;
@@ -235,6 +284,7 @@ public static class OperatorArt
 
     private static string? FindInRoot(string root, string folder, OperatorArtKind kind, IEnumerable<OperatorArtKind>? fallbacks = null)
     {
+        if (!IsSafeFolder(folder)) return null;
         foreach (var candidate in fallbacks ?? Fallbacks(kind))
         {
             var file = Path.Combine(root, folder, FileName(candidate) + ".png");
@@ -243,12 +293,20 @@ public static class OperatorArt
         return null;
     }
 
+    private static string? NormalizeFolder(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static bool IsSafeFolder(string? value) =>
+        !string.IsNullOrWhiteSpace(value) &&
+        value != "." && value != ".." &&
+        value.IndexOfAny(['/', '\\']) < 0;
+
     private static IEnumerable<OperatorArtKind> Fallbacks(OperatorArtKind kind) => kind switch
     {
         OperatorArtKind.Full => [OperatorArtKind.Full, OperatorArtKind.Detail, OperatorArtKind.Icon],
-        OperatorArtKind.Detail => [OperatorArtKind.Detail, OperatorArtKind.Portrait, OperatorArtKind.Icon],
-        OperatorArtKind.Portrait => [OperatorArtKind.Portrait, OperatorArtKind.Icon],
-        _ => [OperatorArtKind.Icon, OperatorArtKind.Portrait],
+        OperatorArtKind.Detail => [OperatorArtKind.Detail, OperatorArtKind.Portrait, OperatorArtKind.Icon, OperatorArtKind.Full],
+        OperatorArtKind.Portrait => [OperatorArtKind.Portrait, OperatorArtKind.Icon, OperatorArtKind.Full],
+        _ => [OperatorArtKind.Icon, OperatorArtKind.Portrait, OperatorArtKind.Full],
     };
 
     private static IEnumerable<OperatorArtKind> CacheFallbacks(OperatorArtKind kind) => kind switch
@@ -288,8 +346,10 @@ public static class OperatorArt
             image.Freeze();
             return image;
         }
-        catch (Exception exception) when (exception is IOException or NotSupportedException or UriFormatException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is IOException or NotSupportedException or UriFormatException
+            or UnauthorizedAccessException or FormatException or ArgumentException)
         {
+            // Битый/неполный PNG не должен ронять отрисовку: остаётся буква.
             return null;
         }
     }
@@ -322,7 +382,8 @@ public static class OperatorArt
                 image.Freeze();
                 return image;
             }
-            catch (Exception exception) when (exception is IOException or NotSupportedException or ArgumentException or UnauthorizedAccessException)
+            catch (Exception exception) when (exception is IOException or NotSupportedException
+                or ArgumentException or UnauthorizedAccessException or FormatException)
             {
                 // Пробуем следующий вариант.
             }
