@@ -210,9 +210,12 @@ public sealed class OperatorModel : INotifyPropertyChanged
     public ImageSource? ArtPortrait => OperatorArt.Load(Name, CharId, OperatorArtKind.Portrait);
     public ImageSource? ArtIcon => OperatorArt.Load(Name, CharId, OperatorArtKind.Icon);
     public ImageSource? ArtFull => OperatorArt.Load(Name, CharId, OperatorArtKind.Full);
-    public bool HasPortraitArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Portrait);
-    public bool HasIconArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Icon);
-    public bool HasFullArt => OperatorArt.Has(Name, CharId, OperatorArtKind.Full);
+
+    // Видимость буквы привязана к реально декодированной картинке, а не к
+    // File.Exists: битый PNG не должен оставлять пустую карточку.
+    public bool HasPortraitArt => ArtPortrait != null;
+    public bool HasIconArt => ArtIcon != null;
+    public bool HasFullArt => ArtFull != null;
 
     public void RefreshArt()
     {
@@ -224,6 +227,7 @@ public sealed class OperatorModel : INotifyPropertyChanged
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasFullArt)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(HasLocalArt)));
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(ArtSlug)));
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(DisplayName)));
     }
     public string RarityStars => new('★', Math.Clamp(Rarity ?? 0, 0, 6));
     public string ElementHex => ColorPalette.Element(Element);

@@ -97,10 +97,10 @@ AK:EF Ledger (WPF, Microsoft.Data.Sqlite)
 The app does not fetch operator art for viewing unless **Settings → Operator
 art → Download art automatically** is enabled (off by default). Python is
 needed only for the snapshot updater: `snapshot.py` reads the key from
-`.secrets/` and calls the Skport API. The snapshot action is explicit; note
-that `snapshot.py` may cache official operator art as part of that action
-unless `--no-art-cache` is used. Viewing, filters, charts and diff work fully
-offline.
+`.secrets/` and calls the Skport API. The in-app snapshot action passes
+`--no-art-cache` unless **Download art automatically** is enabled. Running
+`update_snapshot.cmd` directly bypasses this and may cache art.
+Viewing, filters, charts and diff work fully offline.
 
 ## Key and privacy
 

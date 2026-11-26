@@ -34,9 +34,9 @@ The app makes the following optional network requests:
   enabled (off by default). Only HTTPS URLs with a `skport.com` host are
   accepted; no token is sent and images are cached under `data/art_cache/`;
 - `scripts/snapshot.py` contacts the official Skport API only when the user
-  presses "Снять снимок" or runs `update_snapshot.cmd`. The snapshot action
-  may also cache official operator art from the API response; use
-  `--no-art-cache` to disable that part.
+  presses "Снять снимок" or runs `update_snapshot.cmd`. When **Download art
+  automatically** is off, the in-app action passes `--no-art-cache`;
+  `update_snapshot.cmd` runs the script directly and may cache art.
 
 There is no telemetry.
 

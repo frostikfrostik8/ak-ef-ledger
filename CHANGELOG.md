@@ -6,13 +6,15 @@
   snapshot is shown immediately. Missing art is fetched in the background
   only after explicit consent.
 - Automatic art download for viewing is now **opt-in and off by default**
-  (Settings → Operator art). Taking a snapshot is a separate explicit action;
-  `snapshot.py` may cache art from the API response unless `--no-art-cache` is
-  passed.
+  (Settings → Operator art). The in-app snapshot action passes
+  `--no-art-cache` until the option is enabled; `update_snapshot.cmd` runs the
+  script directly.
 - Switching snapshots no longer covers the content with the modal busy
   overlay; the header ComboBox stays usable.
 - Rapid snapshot switching keeps the last selection (generation + cancellation,
   latest-wins); the header ComboBox and timeline buttons no longer lose clicks.
+- Manual Refresh keeps the selected archive snapshot: the id is captured before
+  the snapshot list is rebuilt.
 - `IsBusy` is now ref-counted, so one operation cannot clear the busy overlay
   of another.
 - Background art updates already rendered roster cards and an open operator
@@ -21,9 +23,11 @@
   signature, uses unique temporary names and refreshes changed URLs when
   automatic download is enabled.
 - Failed downloads keep the old file; `source.json` is updated for changed
-  URLs when the cache is refreshed.
-- A corrupt PNG no longer throws during render; the cache entry is skipped
-  until it can be refreshed.
+  URLs when the cache is refreshed and written only for an existing valid PNG.
+- Malformed `source.json` (`null` values, duplicate keys) no longer breaks the
+  download queue.
+- A corrupt PNG falls back to the next local variant or the letter instead of
+  leaving a blank card.
 - Art pack install/remove refreshes visible cards, not only the status line.
 - No database schema changes; existing snapshots remain compatible.
 

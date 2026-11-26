@@ -136,18 +136,28 @@ public static class OperatorArtCache
         var iconFailed = false;
         if (pending.NeedIcon && iconUrl != null)
         {
-            try
+            if (!source.ContainsKey("icon") && IsValidPng(iconPath) && TryValidateUrl(iconUrl, out _))
             {
-                await DownloadAsync(iconUrl, iconPath, cancellationToken).ConfigureAwait(false);
-                iconDownloaded = true;
+                // Валидный файл без provenance (старый кэш snapshot.py):
+                // доверяем файлу и записываем текущий URL без перекачки.
+                source["icon"] = iconUrl;
+                changed = true;
             }
-            catch (OperationCanceledException)
+            else
             {
-                throw;
-            }
-            catch (Exception)
-            {
-                iconFailed = true;
+                try
+                {
+                    iconDownloaded = await DownloadAsync(iconUrl, iconPath, cancellationToken).ConfigureAwait(false);
+                    iconFailed = !iconDownloaded;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    iconFailed = true;
+                }
             }
         }
 
@@ -155,18 +165,26 @@ public static class OperatorArtCache
         var fullFailed = false;
         if (pending.NeedFull && fullUrl != null)
         {
-            try
+            if (!source.ContainsKey("full") && IsValidPng(fullPath) && TryValidateUrl(fullUrl, out _))
             {
-                await DownloadAsync(fullUrl, fullPath, cancellationToken).ConfigureAwait(false);
-                fullDownloaded = true;
+                source["full"] = fullUrl;
+                changed = true;
             }
-            catch (OperationCanceledException)
+            else
             {
-                throw;
-            }
-            catch (Exception)
-            {
-                fullFailed = true;
+                try
+                {
+                    fullDownloaded = await DownloadAsync(fullUrl, fullPath, cancellationToken).ConfigureAwait(false);
+                    fullFailed = !fullDownloaded;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    fullFailed = true;
+                }
             }
         }
 
@@ -186,20 +204,28 @@ public static class OperatorArtCache
     {
         var had = source.TryGetValue(kind, out var old);
 
-        if (downloaded && url != null)
+        // Provenance пишем только после того, как файл реально существует
+        // и является PNG. Иначе невалидный URL выглядел бы как успешная
+        // загрузка, и snapshot.py потом не перекачал бы файл.
+        var fileValid = File.Exists(path) && IsValidPng(path);
+
+        if (downloaded && !string.IsNullOrWhiteSpace(url) && fileValid)
         {
             if (had && old == url) return false;
             source[kind] = url;
             return true;
         }
 
+        // В снимке нет URL для этого вида: валидный файл и его старый
+        // provenance не трогаем — иначе потеряем подтверждение зря.
+        if (string.IsNullOrWhiteSpace(url)) return false;
+
         // Загрузка упала, но старый файл и его provenance целы — не врём,
         // что файл соответствует новому URL. snapshot.py сам обновит его.
-        if (failed && had && File.Exists(path) && IsValidPng(path)) return false;
+        if (failed && had && fileValid) return false;
 
         // Файл уже есть, source совпадает с URL и PNG валиден — подтверждено.
-        if (!string.IsNullOrWhiteSpace(url) && had && old == url &&
-            File.Exists(path) && IsValidPng(path)) return false;
+        if (had && old == url && fileValid) return false;
 
         // Провенанс неизвестен или устарел: запись убираем, файл не трогаем.
         // Тогда snapshot.py увидит расхождение и перекачает файл.
@@ -224,20 +250,32 @@ public static class OperatorArtCache
 
     private static Dictionary<string, string> ReadSource(string folder)
     {
+        var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var path = Path.Combine(folder, "source.json");
-        if (!File.Exists(path)) return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!File.Exists(path)) return result;
 
         try
         {
-            var data = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(path));
-            return data is null
-                ? new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-                : new Dictionary<string, string>(data, StringComparer.OrdinalIgnoreCase);
+            using var document = JsonDocument.Parse(File.ReadAllText(path));
+            if (document.RootElement.ValueKind != JsonValueKind.Object) return result;
+
+            // EnumerateObject терпит null-значения и дубли ключей (в т.ч. с
+            // разным регистром), которые раньше роняли Dictionary-конструктор.
+            foreach (var property in document.RootElement.EnumerateObject())
+            {
+                if (property.Value.ValueKind != JsonValueKind.String) continue;
+                var value = property.Value.GetString();
+                if (string.IsNullOrWhiteSpace(value)) continue;
+                result[property.Name] = value.Trim();
+            }
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or JsonException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or JsonException or ArgumentException)
         {
-            return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            result.Clear();
         }
+
+        return result;
     }
 
     private static void WriteSource(string folder, Dictionary<string, string> source)
@@ -260,12 +298,12 @@ public static class OperatorArtCache
         }
     }
 
-    private static async Task DownloadAsync(string? url, string targetPath, CancellationToken cancellationToken)
+    private static async Task<bool> DownloadAsync(string? url, string targetPath, CancellationToken cancellationToken)
     {
-        if (!TryValidateUrl(url, out var uri)) return;
+        if (!TryValidateUrl(url, out var uri)) return false;
 
         var folder = Path.GetDirectoryName(targetPath);
-        if (string.IsNullOrWhiteSpace(folder)) return;
+        if (string.IsNullOrWhiteSpace(folder)) return false;
         Directory.CreateDirectory(folder);
 
         var temporary = targetPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
@@ -287,6 +325,7 @@ public static class OperatorArtCache
                 throw new InvalidDataException("not a PNG");
 
             File.Move(temporary, targetPath, true);
+            return File.Exists(targetPath) && IsValidPng(targetPath);
         }
         catch
         {
@@ -315,7 +354,7 @@ public static class OperatorArtCache
         !string.IsNullOrWhiteSpace(value) &&
         value.Length <= 128 &&
         value != "." && value != ".." &&
-        value.IndexOfAny(['/', '\\']) < 0;
+        value.IndexOfAny(['/', '\\', ':']) < 0;
 
     private static bool TryValidateUrl(string? value, out Uri uri)
     {

@@ -21,7 +21,9 @@ public sealed class MainViewModel : INotifyPropertyChanged
     private bool _suppressSelection;
     private bool _suppressCompare;
     private int _loadGeneration;
+    private int? _selectionDuringRefresh;
     private CancellationTokenSource? _artCts;
+    private int _artGeneration = -1;
     private bool _artFetching;
     private bool _autoDownloadArt;
     private int _busyScopes;
@@ -246,6 +248,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             if (!Set(ref _selectedSnapshot, value)) return;
             OnPropertyChanged(nameof(SelectedSnapshotId));
+            if (_refreshing && value != null) _selectionDuringRefresh = value.Id;
             if (!_suppressSelection && value != null)
             {
                 // Переключение снимка не должно накрывать контент модальным
@@ -394,12 +397,18 @@ public sealed class MainViewModel : INotifyPropertyChanged
         {
             foreach (var op in operators) op.RefreshArt();
         }
+        foreach (var op in TestOperators) op.RefreshArt();
         OnPropertyChanged(nameof(ArtStatusText));
         OnPropertyChanged(nameof(ArtPathText));
         OnPropertyChanged(nameof(HasArtPack));
         OnPropertyChanged(nameof(CanRemoveArtPack));
         OnPropertyChanged(nameof(CanRemoveArtNow));
         OnPropertyChanged(nameof(ShowArtBanner));
+
+        // После установки пака догрузка могла стать ненужной, после удаления —
+        // наоборот. Перезапускаем её только при явно включённой опции.
+        if (_autoDownloadArt && Data?.Operators is { Count: > 0 } active)
+            StartArtFetch(active, _loadGeneration);
     }
 
     /// <summary>Отменить фоновую загрузку арта при закрытии/смене профиля.</summary>
@@ -409,6 +418,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
     {
         CancelArtFetch();
         _loadGeneration++;
+        LocalizationService.Instance.LanguageChanged -= OnLanguageChanged;
+        LocalizationService.Instance.LanguagesChanged -= OnLanguagesChanged;
     }
 
     public void SetSettingsStatus(string message, bool error = false)
@@ -655,6 +666,12 @@ public sealed class MainViewModel : INotifyPropertyChanged
         EnterBusy(L.T("status_reading_snapshots"));
         try
         {
+            // ComboBox с TwoWay-биндингом обнуляет SelectedSnapshot при
+            // Snapshots.Clear(). Запоминаем выбор до перестройки коллекции,
+            // иначе ручной Refresh с архивного снимка уводит на latest.
+            var keepId = SelectedSnapshot?.Id ?? Data?.Snapshot.Id;
+            _selectionDuringRefresh = null;
+
             var meta = await Task.Run(_dataService.LoadMeta);
             var snapshots = await Task.Run(_dataService.LoadSnapshots);
             Meta = meta;
@@ -663,7 +680,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             OnPropertyChanged(nameof(Snapshots));
             OnPropertyChanged(nameof(FirstSnapshot));
 
-            var preferredId = selectLatest ? meta.Latest?.Id : SelectedSnapshot?.Id ?? meta.Latest?.Id;
+            var preferredId = selectLatest ? meta.Latest?.Id : keepId ?? meta.Latest?.Id;
             var target = Snapshots.FirstOrDefault(item => item.Id == preferredId) ?? Snapshots.FirstOrDefault();
             if (target == null)
             {
@@ -684,7 +701,8 @@ public sealed class MainViewModel : INotifyPropertyChanged
             // не перетираем его выбор и не запускаем вторую загрузку.
             if (generationAtStart != _loadGeneration)
             {
-                if (Snapshots.FirstOrDefault(item => item.Id == SelectedSnapshot?.Id) is { } keep)
+                var wantedId = _selectionDuringRefresh ?? keepId;
+                if (Snapshots.FirstOrDefault(item => item.Id == wantedId) is { } keep)
                     SelectSnapshotSilently(keep);
                 return;
             }
@@ -723,6 +741,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
 
     private void SelectSnapshotSilently(SnapshotSummary? snapshot)
     {
+        if (_refreshing && snapshot != null) _selectionDuringRefresh = snapshot.Id;
         _suppressSelection = true;
         SelectedSnapshot = snapshot;
         _suppressSelection = false;
@@ -789,10 +808,24 @@ public sealed class MainViewModel : INotifyPropertyChanged
             return;
         }
 
+        // Вторая пачка поверх уже идущей для того же снимка не нужна:
+        // повторное включение тумблера не должно дублировать загрузки.
+        if (_artFetching && generation == _artGeneration && _artCts is { IsCancellationRequested: false }) return;
+
         // OperatorArt использует обычные словари; очередь считаем на UI-потоке.
         var pending = OperatorArtCache.CollectPending(operators);
+        if (pending.Count == 0)
+        {
+            // Нечего догружать: не создаём CTS и не переинициализируем
+            // OperatorArt — карточки уже показывают локальный арт/букву.
+            OnPropertyChanged(nameof(ShowArtBanner));
+            return;
+        }
+
+        CancelArtFetch();
         var cts = new CancellationTokenSource();
         _artCts = cts;
+        _artGeneration = generation;
         _artFetching = true;
         OnPropertyChanged(nameof(ShowArtBanner));
         _ = FetchArtAsync(operators, pending, generation, cts);
@@ -825,6 +858,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
             {
                 _artCts = null;
                 _artFetching = false;
+                _artGeneration = -1;
                 OnPropertyChanged(nameof(ShowArtBanner));
             }
             cts.Dispose();
@@ -1243,7 +1277,7 @@ public sealed class MainViewModel : INotifyPropertyChanged
         StatusMessage = L.T("status_starting_snapshot");
         try
         {
-            var result = await _updateService.RunAsync();
+            var result = await _updateService.RunAsync(_autoDownloadArt);
             if (!result.Ok)
             {
                 StatusIsError = true;

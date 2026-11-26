@@ -65,7 +65,8 @@ public static class OperatorArt
     private static readonly Dictionary<string, OperatorIdentity> ByCharId = new(StringComparer.OrdinalIgnoreCase);
 
     private static readonly ConcurrentDictionary<string, BitmapImage?> Cache = new();
-    private static readonly ConcurrentDictionary<string, string?> Paths = new();
+    private static readonly ConcurrentDictionary<string, string[]> Paths = new();
+    private static readonly ConcurrentDictionary<string, (long Length, DateTime LastWriteUtc)> BrokenPaths = new();
 
     private static string? _root;
     private static string? _apiCacheRoot;
@@ -94,6 +95,7 @@ public static class OperatorArt
         _root = ArtPack.Status.Root;
         Cache.Clear();
         Paths.Clear();
+        BrokenPaths.Clear();
         Aliases.Clear();
         BySlug.Clear();
         ByCharId.Clear();
@@ -155,7 +157,7 @@ public static class OperatorArt
     {
         var identity = Resolve(name) ?? ResolveByCharId(charId);
         var slug = identity?.Slug;
-        if (ResolvePath(slug, charId, kind) != null) return true;
+        if (ResolvePaths(slug, charId, kind).Any(path => !IsKnownBroken(path))) return true;
         return slug != null && slug.Equals(EmbeddedSlug, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -172,12 +174,12 @@ public static class OperatorArt
 
         if (!string.IsNullOrWhiteSpace(_root) && Directory.Exists(_root))
         {
-            if (IsSafeFolder(slug) && File.Exists(Path.Combine(_root, slug!, file))) return true;
-            if (IsSafeFolder(id) && File.Exists(Path.Combine(_root, id!, file))) return true;
+            if (IsSafeFolder(slug) && IsUsableFile(Path.Combine(_root, slug!, file))) return true;
+            if (IsSafeFolder(id) && IsUsableFile(Path.Combine(_root, id!, file))) return true;
         }
 
         if (!string.IsNullOrWhiteSpace(_apiCacheRoot) && IsSafeFolder(id) &&
-            File.Exists(Path.Combine(_apiCacheRoot, id!, file)))
+            IsUsableFile(Path.Combine(_apiCacheRoot, id!, file)))
         {
             return true;
         }
@@ -249,37 +251,53 @@ public static class OperatorArt
 
     private static BitmapImage? LoadKind(string? slug, string? charId, OperatorArtKind kind)
     {
-        var path = ResolvePath(slug, charId, kind);
-        if (path != null) return LoadFromPath(path, DecodeWidth(kind));
+        // Пробуем все найденные варианты, а не только первый: битый PNG в
+        // локальном паке не должен скрывать рабочий icon/full из кэша.
+        foreach (var path in ResolvePaths(slug, charId, kind))
+        {
+            if (IsKnownBroken(path)) continue;
+            var image = LoadFromPath(path, DecodeWidth(kind));
+            if (image != null) return image;
+            MarkBroken(path);
+        }
         return slug == null ? null : LoadEmbedded(slug, kind);
     }
 
-    private static string? ResolvePath(string? slug, string? charId, OperatorArtKind kind)
+    private static IReadOnlyList<string> ResolvePaths(string? slug, string? charId, OperatorArtKind kind)
     {
         var normalizedCharId = NormalizeFolder(charId);
         var cacheKey = $"{slug ?? "-"}|{normalizedCharId ?? "-"}|{kind}";
         if (Paths.TryGetValue(cacheKey, out var cached)) return cached;
 
-        string? path = null;
+        var found = new List<string>(4);
 
         // 1. Curated local art pack: by slug, then by charId folder.
         if (!string.IsNullOrWhiteSpace(_root) && Directory.Exists(_root))
         {
-            if (IsSafeFolder(slug))
-                path = FindInRoot(_root, slug!, kind);
-            if (path == null && IsSafeFolder(normalizedCharId))
-                path = FindInRoot(_root, normalizedCharId!, kind);
+            if (IsSafeFolder(slug)) AddExisting(found, _root, slug!, Fallbacks(kind));
+            if (IsSafeFolder(normalizedCharId)) AddExisting(found, _root, normalizedCharId!, Fallbacks(kind));
         }
 
         // 2. API cache written by snapshot.py: data/art_cache/<char_id>/.
-        if (path == null && !string.IsNullOrWhiteSpace(_apiCacheRoot) &&
-            IsSafeFolder(normalizedCharId) && Directory.Exists(_apiCacheRoot))
+        if (!string.IsNullOrWhiteSpace(_apiCacheRoot) && IsSafeFolder(normalizedCharId) &&
+            Directory.Exists(_apiCacheRoot))
         {
-            path = FindInRoot(_apiCacheRoot, normalizedCharId!, kind, CacheFallbacks(kind));
+            AddExisting(found, _apiCacheRoot, normalizedCharId!, CacheFallbacks(kind));
         }
 
-        Paths[cacheKey] = path;
-        return path;
+        var result = found.Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        Paths[cacheKey] = result;
+        return result;
+    }
+
+    private static void AddExisting(List<string> target, string root, string folder, IEnumerable<OperatorArtKind> kinds)
+    {
+        if (!IsSafeFolder(folder)) return;
+        foreach (var kind in kinds)
+        {
+            var file = Path.Combine(root, folder, FileName(kind) + ".png");
+            if (File.Exists(file)) target.Add(file);
+        }
     }
 
     private static string? FindInRoot(string root, string folder, OperatorArtKind kind, IEnumerable<OperatorArtKind>? fallbacks = null)
@@ -299,7 +317,46 @@ public static class OperatorArt
     private static bool IsSafeFolder(string? value) =>
         !string.IsNullOrWhiteSpace(value) &&
         value != "." && value != ".." &&
-        value.IndexOfAny(['/', '\\']) < 0;
+        value.IndexOfAny(['/', '\\', ':']) < 0;
+
+    private static bool IsUsableFile(string path) => File.Exists(path) && !IsKnownBroken(path);
+
+    /// <summary>
+    /// Файл уже не смог декодироваться и с тех пор не менялся. Пропускаем его
+    /// до повторной загрузки/замены, чтобы не пытаться декодировать каждый раз.
+    /// </summary>
+    private static bool IsKnownBroken(string path)
+    {
+        if (!BrokenPaths.TryGetValue(path, out var marker)) return false;
+
+        try
+        {
+            var info = new FileInfo(path);
+            if (info.Exists && info.Length == marker.Length && info.LastWriteTimeUtc == marker.LastWriteUtc)
+                return true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
+
+        // Файл заменили — даём ему шанс.
+        BrokenPaths.TryRemove(path, out _);
+        return false;
+    }
+
+    private static void MarkBroken(string path)
+    {
+        try
+        {
+            var info = new FileInfo(path);
+            if (info.Exists) BrokenPaths[path] = (info.Length, info.LastWriteTimeUtc);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            // Не смогли запомнить — повторим попытку в следующий раз.
+        }
+    }
 
     private static IEnumerable<OperatorArtKind> Fallbacks(OperatorArtKind kind) => kind switch
     {

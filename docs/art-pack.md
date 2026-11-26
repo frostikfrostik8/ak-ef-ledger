@@ -56,8 +56,11 @@ art automatically** first. The app checks the local pack/cache, then downloads
 only the missing images from the API URLs stored in that snapshot. On the
 roster card, `portrait` falls back to `icon`, then `full`, then the letter.
 
-Taking a snapshot with `snapshot.py` is a separate explicit action; the script
-may cache art from the API response. Pass `--no-art-cache` to prevent that.
+Taking a snapshot with `snapshot.py` is a separate explicit action. From the
+app, the script receives `--no-art-cache` unless **Download art automatically**
+is enabled, so the opt-in covers both viewing and the in-app snapshot action.
+`update_snapshot.cmd` and direct `snapshot.py` runs bypass this and may cache
+art; pass `--no-art-cache` there explicitly.
 
 ## manifest.json
 

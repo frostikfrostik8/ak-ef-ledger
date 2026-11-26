@@ -18,7 +18,7 @@ public sealed class UpdateService
         _dbPath = dbPath;
     }
 
-    public async Task<UpdateResult> RunAsync(CancellationToken cancellationToken = default)
+    public async Task<UpdateResult> RunAsync(bool cacheArt, CancellationToken cancellationToken = default)
     {
         var started = Stopwatch.StartNew();
         var script = Path.Combine(_repoRoot, "scripts", "snapshot.py");
@@ -41,6 +41,7 @@ public sealed class UpdateService
         startInfo.ArgumentList.Add(script);
         startInfo.ArgumentList.Add("--db");
         startInfo.ArgumentList.Add(_dbPath);
+        if (!cacheArt) startInfo.ArgumentList.Add("--no-art-cache");
         startInfo.Environment["PYTHONIOENCODING"] = "utf-8";
 
         try
