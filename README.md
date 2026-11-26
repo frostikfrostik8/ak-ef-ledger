@@ -60,7 +60,8 @@ PC" — this is it.
   and **Exit** / **Save** buttons.
 - **Operator art** — an external `operators/` folder with `icon` / `portrait` /
   `full`; install from a folder, a zip or GitHub Releases.
-- **No telemetry** — the app sends no analytics and does no background work.
+- **No telemetry** — the app sends no analytics; network is used only for
+  explicit snapshots and, if enabled, operator-art downloads.
 
 ## Screenshots
 
